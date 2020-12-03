@@ -889,6 +889,6 @@ if __name__ == '__main__':
     parser.add_argument('log_specifications', type=str, help='File containing error specifications')
     parser.add_argument('gold', type=str, help='Input gold annotations file')
     parser.add_argument('system', type=str, help='Input system response file')
-    parser.add_argument('scores', type=str, help='Output scores directory')
+    parser.add_argument('scores', type=str, help='Output scores directory (note that this directory should not exist)')
     args = parser.parse_args()
     main(args)

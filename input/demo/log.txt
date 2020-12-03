@@ -1,0 +1,22 @@
+12/03/2020 04:30:51 PM - score_submission.py - INFO - Execution begins {current_dir:/Users/skr1/Code/rufes/tools/scorer, script_name:score_submission.py, arguments:-l ../../input/demo/log.txt -r demo ../../input/log_specifications.txt ../../input/demo/gold.tab ../../input/demo/system_output.tab ../../input/demo/scores/}
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ALIGNMENT_INFO - DOCID: DOC1 GOLD_ENTITY:Farmers SYSTEM_ENTITY:Farmers1 SIMILARITY:2
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ENTITY_TYPES_INFO - GOLD DOCID: DOC1 ENTITY:Farmers TYPES: PER,PER.Farmer EXPANDED: PER,PER;PER,PER.Farmer
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ENTITY_TYPES_INFO - SYSTEM DOCID: DOC1 ENTITY:Farmers1 TYPES: PER,PER.Farmer EXPANDED: PER,PER;PER,PER.Farmer
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ALIGNMENT_INFO - DOCID: DOC1 GOLD_ENTITY:acres SYSTEM_ENTITY:acres1 SIMILARITY:3
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ENTITY_TYPES_INFO - GOLD DOCID: DOC1 ENTITY:acres TYPES: LOC,LOC.Land,LOC.Land.Field EXPANDED: LOC,LOC;LOC,LOC.Land,LOC.Land;LOC,LOC.Land,LOC.Land.Field;LOC,LOC.Land,LOC
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ENTITY_TYPES_INFO - SYSTEM DOCID: DOC1 ENTITY:acres1 TYPES: LOC,LOC.Land,LOC.Land.Field EXPANDED: LOC,LOC;LOC,LOC.Land,LOC.Land;LOC,LOC.Land,LOC.Land.Field;LOC,LOC.Land,LOC
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ALIGNMENT_INFO - DOCID: DOC1 GOLD_ENTITY:U.S. farmers SYSTEM_ENTITY:U.S. farmers1 SIMILARITY:1
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ENTITY_TYPES_INFO - GOLD DOCID: DOC1 ENTITY:U.S. farmers TYPES: PER,PER.Farmer EXPANDED: PER,PER;PER,PER.Farmer
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ENTITY_TYPES_INFO - SYSTEM DOCID: DOC1 ENTITY:U.S. farmers1 TYPES: PER,PER.Farmer EXPANDED: PER,PER;PER,PER.Farmer
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ALIGNMENT_INFO - DOCID: DOC1 GOLD_ENTITY:corn crop SYSTEM_ENTITY:corn crop1 SIMILARITY:1
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ENTITY_TYPES_INFO - GOLD DOCID: DOC1 ENTITY:corn crop TYPES: ConsumerGoods,ConsumerGoods.Food EXPANDED: ConsumerGoods,ConsumerGoods.Food;ConsumerGoods,ConsumerGoods
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ENTITY_TYPES_INFO - SYSTEM DOCID: DOC1 ENTITY:corn crop1 TYPES: ConsumerGoods,ConsumerGoods.Food EXPANDED: ConsumerGoods,ConsumerGoods.Food;ConsumerGoods,ConsumerGoods
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ALIGNMENT_INFO - DOCID: DOC1 GOLD_ENTITY:They SYSTEM_ENTITY:They SIMILARITY:1
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ENTITY_TYPES_INFO - GOLD DOCID: DOC1 ENTITY:They TYPES: PER,PER.Farmer EXPANDED: PER,PER;PER,PER.Farmer
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ENTITY_TYPES_INFO - SYSTEM DOCID: DOC1 ENTITY:They TYPES: PER,PER.Farmer EXPANDED: PER,PER;PER,PER.Farmer
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ALIGNMENT_INFO - DOCID: DOC1 GOLD_ENTITY:corn, soybeans and wheat SYSTEM_ENTITY:corn, soybeans and wheat1 SIMILARITY:1
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ENTITY_TYPES_INFO - GOLD DOCID: DOC1 ENTITY:corn, soybeans and wheat TYPES: ConsumerGoods,ConsumerGoods.Food EXPANDED: ConsumerGoods,ConsumerGoods.Food;ConsumerGoods,ConsumerGoods
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ENTITY_TYPES_INFO - SYSTEM DOCID: DOC1 ENTITY:corn, soybeans and wheat1 TYPES: ConsumerGoods,ConsumerGoods.Food EXPANDED: ConsumerGoods,ConsumerGoods.Food;ConsumerGoods,ConsumerGoods
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ALIGNMENT_INFO - DOCID: DOC1 GOLD_ENTITY:Bloomberg survey SYSTEM_ENTITY:Bloomberg survey1 SIMILARITY:1
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ENTITY_TYPES_INFO - GOLD DOCID: DOC1 ENTITY:Bloomberg survey TYPES: Document,Document.Report EXPANDED: Document,Document.Report;Document,Document
+12/03/2020 04:30:51 PM - score_submission.py - INFO - ENTITY_TYPES_INFO - SYSTEM DOCID: DOC1 ENTITY:Bloomberg survey1 TYPES: Document,Document.Report EXPANDED: Document,Document.Report;Document,Document

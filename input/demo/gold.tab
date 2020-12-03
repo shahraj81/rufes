@@ -1,0 +1,10 @@
+NIST	annotation-0	Farmers	DOC1:0-6	Farmers	PER,PER.Farmer	NOM	1.0
+NIST	annotation-1	acres	DOC1:22-26	acres	LOC,LOC.Land,LOC.Land.Field	NOM	1.0
+NIST	annotation-2	U.S. farmers	DOC1:118-129	U.S. farmers	PER,PER.Farmer	NAM	1.0
+NIST	annotation-3	acres	DOC1:151-155	acres	LOC,LOC.Land,LOC.Land.Field	NOM	1.0
+NIST	annotation-4	corn crop	DOC1:203-211	corn crop	ConsumerGoods,ConsumerGoods.Food	NOM	1.0
+NIST	annotation-5	They	DOC1:311-314	They	PER,PER.Farmer	PRO	1.0
+NIST	annotation-6	corn, soybeans and wheat	DOC1:325-348	corn, soybeans and wheat	ConsumerGoods,ConsumerGoods.Food	NOM	1.0
+NIST	annotation-7	acres	DOC1:367-371	acres	LOC,LOC.Land,LOC.Land.Field	NOM	1.0
+NIST	annotation-8	Bloomberg survey	DOC1:397-412	Bloomberg survey	Document,Document.Report	NAM	1.0
+NIST	annotation-9	farmers	DOC1:420-426	Farmers	PER,PER.Farmer	NOM	1.0

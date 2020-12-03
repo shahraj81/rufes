@@ -1,0 +1,9 @@
+DocID   RunID GoldEntityID             SystemEntityID              Prec Recall     F1
+DOC1    demo  Bloomberg survey         Bloomberg survey1         1.0000 1.0000 1.0000
+DOC1    demo  Farmers                  Farmers1                  1.0000 1.0000 1.0000
+DOC1    demo  They                     They                      1.0000 1.0000 1.0000
+DOC1    demo  U.S. farmers             U.S. farmers1             1.0000 1.0000 1.0000
+DOC1    demo  acres                    acres1                    1.0000 1.0000 1.0000
+DOC1    demo  corn crop                corn crop1                1.0000 1.0000 1.0000
+DOC1    demo  corn, soybeans and wheat corn, soybeans and wheat1 1.0000 1.0000 1.0000
+Summary demo                                                                   1.0000
