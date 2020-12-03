@@ -83,3 +83,8 @@ This log entry contains information about which gold-entity was aligned to which
 ## ENTITY_TYPES_INFO
 
 This log entry contains information about gold or system entity types provided and the expanded types used for scoring.
+
+# Revision history
+
+## 12/03/2020:
+* Initial version.
