@@ -16,8 +16,9 @@ This document describes the usage of the type metric score for RUFES track organ
 # Pre-requisites
 
 In order to run the script you would need to:
-	* use python3.9,
-	* have python package Munkres installed (use `pip install munkres`).
+
+* use python3.9,
+* have python package Munkres installed (use `pip install munkres`).
 
 # How to run the scorer
 
