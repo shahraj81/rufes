@@ -1,0 +1,7 @@
+type      code                            message
+ERROR     DEFAULT_ERROR                   Error encountered {} {}
+WARNING   DEFAULT_WARNING                 Warning: {}
+DEBUG     DEFAULT_DEBUG                   {}
+INFO      DEFAULT_INFO                    {}
+INFO      ALIGNMENT_INFO                  DOCID: {} GOLD_ENTITY:{} SYSTEM_ENTITY:{} SIMILARITY:{}
+INFO      ENTITY_TYPES_INFO               {} DOCID: {} ENTITY:{} TYPES: {} EXPANDED: {}
