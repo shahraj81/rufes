@@ -712,8 +712,8 @@ class TypeMetricScorer(Scorer):
                     similarities[gold_entity_id] = {}
                 if system_entity_id not in similarities[gold_entity_id]:
                     similarities[gold_entity_id][system_entity_id] = 0
-                gold_mention_spans = set([e.get('mention_id') for e in data['gold'][gold_entity_id]])
-                system_mention_spans = set([e.get('mention_id') for e in data['system'][system_entity_id]])
+                gold_mention_spans = set([e.get('mention_span') for e in data['gold'][gold_entity_id]])
+                system_mention_spans = set([e.get('mention_span') for e in data['system'][system_entity_id]])
                 similarities[gold_entity_id][system_entity_id] = len(gold_mention_spans.intersection(system_mention_spans))
         mappings = {}
         for gold_or_system in ['gold', 'system']:
