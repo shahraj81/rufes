@@ -615,6 +615,31 @@ class TypeMetricScorer(Scorer):
             return max_similarity
 
         def get_cost_matrix(similarities, mappings):
+            def conditional_transpose(cost_matrix):
+                m = {}
+                rm = {}
+                row_index = 0
+                col_index = 0
+                is_transposed = False
+                for row in cost_matrix:
+                    row_index = 0
+                    for value in row:
+                        if row_index not in m:
+                            m[row_index] = {}
+                        m[row_index][col_index] = value
+                        row_index += 1
+                    col_index += 1
+                if col_index >= row_index:
+                    return is_transposed, cost_matrix
+                else:
+                    is_transposed = True
+                    transposed_matrix = []
+                    for row_index in sorted(m):
+                        transposed_matrix_row = []
+                        for col_index in sorted(m[row_index]):
+                            transposed_matrix_row += [m[row_index][col_index]]
+                        transposed_matrix += [transposed_matrix_row]
+                    return is_transposed, transposed_matrix
             max_similarity = get_max_similarity(similarities)
             cost_matrix = []
             for gold_index in sorted(mappings['gold']['index_to_id']):
@@ -627,7 +652,7 @@ class TypeMetricScorer(Scorer):
                         similarity = similarities[gold_id][system_id]
                     cost_row += [max_similarity - similarity]
                 cost_matrix += [cost_row]
-            return cost_matrix
+            return conditional_transpose(cost_matrix)
 
         def get_expanded_types(entity_types):
             def expand(entity_type):
@@ -685,8 +710,12 @@ class TypeMetricScorer(Scorer):
         def get_alignment(similarities, mappings):
             alignment = {'gold_to_system': {}, 'system_to_gold': {}}
             if len(similarities) > 0:
-                cost_matrix = get_cost_matrix(similarities, mappings)
+                is_transposed, cost_matrix = get_cost_matrix(similarities, mappings)
                 for gold_entity_index, system_entity_index in Munkres().compute(cost_matrix):
+                    if is_transposed:
+                        temp = gold_entity_index
+                        gold_entity_index = system_entity_index
+                        system_entity_index = temp
                     gold_entity_id = mappings['gold']['index_to_id'][gold_entity_index]
                     system_entity_id = mappings['system']['index_to_id'][system_entity_index]
                     similarity = similarities[gold_entity_id][system_entity_id]
@@ -714,7 +743,11 @@ class TypeMetricScorer(Scorer):
                     similarities[gold_entity_id][system_entity_id] = 0
                 gold_mention_spans = set([e.get('mention_span') for e in data['gold'][gold_entity_id]])
                 system_mention_spans = set([e.get('mention_span') for e in data['system'][system_entity_id]])
-                similarities[gold_entity_id][system_entity_id] = len(gold_mention_spans.intersection(system_mention_spans))
+                common_mentions = gold_mention_spans.intersection(system_mention_spans)
+                similarity = len(common_mentions)
+                similarities[gold_entity_id][system_entity_id] = similarity
+                if similarity > 0:
+                    self.record_event('SIMILARITY_INFO', document_id, gold_entity_id, system_entity_id, similarity, ';'.join(common_mentions))
         mappings = {}
         for gold_or_system in ['gold', 'system']:
             mappings[gold_or_system] = {'id_to_index': {}, 'index_to_id': {}}
@@ -723,6 +756,7 @@ class TypeMetricScorer(Scorer):
                 mappings[gold_or_system]['id_to_index'][entity_id] = index
                 mappings[gold_or_system]['index_to_id'][index] = entity_id
                 index += 1
+
         alignment = get_alignment(similarities, mappings)
         scores = {}
         for gold_entity_id in data['gold']:
