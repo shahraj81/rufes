@@ -698,7 +698,7 @@ class Scorer(Object):
     def __str__(self):
         return self.get('scores').__str__()
 
-class TypeMetricScore(Score):
+class TypeMetricScoreV1(Score):
     """
     AIDA class for type metric score corresponding to the TypeMetricScorerV1.
     """
@@ -713,7 +713,7 @@ class TypeMetricScore(Score):
         self.f1 = f1
         self.summary = summary
 
-class TypeMetricScorer(Scorer):
+class TypeMetricScorerV1(Scorer):
     """
     Class for type metric scores.
 
@@ -897,7 +897,7 @@ class TypeMetricScorer(Scorer):
                 f1 = document_scores[gold_entity_id_and_system_entity_id]['f1']
                 mean_f1 += f1
                 count += 1
-                score = TypeMetricScore(self.logger,
+                score = TypeMetricScoreV1(self.logger,
                                         self.get('run_id'),
                                         document_id,
                                         gold_entity_id,
@@ -913,7 +913,7 @@ class TypeMetricScorer(Scorer):
                                         ('system_entity_id', False))):
             scores_printer.add(score)
         mean_f1 = mean_f1 / count if count else 0
-        mean_score = TypeMetricScore(self.logger,
+        mean_score = TypeMetricScoreV1(self.logger,
                                    self.get('run_id'),
                                    'Summary',
                                    '',
@@ -921,6 +921,122 @@ class TypeMetricScorer(Scorer):
                                    '',
                                    '',
                                    mean_f1,
+                                   summary = True)
+        scores_printer.add(mean_score)
+        self.scores = scores_printer
+
+class TypeMetricScoreV2(Score):
+    """
+    AIDA class for type metric score corresponding to the TypeMetricScorerV2.
+    """
+    def __init__(self, logger, run_id, document_id, gold_entity_id, system_entity_id, average_precision, summary=False):
+        super().__init__(logger)
+        self.run_id = run_id
+        self.document_id = document_id
+        self.gold_entity_id = gold_entity_id if gold_entity_id is not None else 'None'
+        self.system_entity_id = system_entity_id if system_entity_id is not None else 'None'
+        self.average_precision = average_precision
+        self.summary = summary
+
+class TypeMetricScorerV2(Scorer):
+    """
+    Class for type metric scores.
+
+    This variant of the scorer considers ranks the types asserted on the cluster and compute AP.
+
+    The ranking is induced using weights on types. The weight of a type is computed using the fraction of mentions that assertion that type.
+    """
+
+    printing_specs = [{'name': 'document_id',      'header': 'DocID',           'format': 's',    'justify': 'L'},
+                      {'name': 'run_id',           'header': 'RunID',           'format': 's',    'justify': 'L'},
+                      {'name': 'gold_entity_id',   'header': 'GoldEntityID',    'format': 's',    'justify': 'L'},
+                      {'name': 'system_entity_id', 'header': 'SystemEntityID',  'format': 's',    'justify': 'L'},
+                      {'name': 'average_precision','header': 'AveragePrecision','format': '6.4f', 'justify': 'R', 'mean_format': '6.4f'}]
+
+    def __init__(self, logger, separator=None, **kwargs):
+        super().__init__(logger, separator=separator, **kwargs)
+
+    def order(self, k):
+        return k
+
+    def get_parsed_entries(self, entries):
+        return(parse_entries(entries))
+
+    def get_document_scores(self, document_id, document_annotations, document_responses, document_alignment):
+        def get_type_scores(logger, document_id, gold_entity_id, gold_entries, system_entity_id, system_entries):
+            average_precision = 0.8
+            return average_precision
+        data = {
+                'gold': self.get('parsed_entries', self.get('gold').get('entries')).get(document_id),
+                'system': self.get('parsed_entries', self.get('system').get('entries')).get(document_id, [])
+                }
+        scores = {}
+        for gold_entity_id in data['gold']:
+            system_entity_id = 'None'
+            similarity = 'None'
+            if gold_entity_id in document_alignment.get('gold_to_system'):
+                system_entity_id = document_alignment.get('gold_to_system').get(gold_entity_id).get('aligned_to')
+                similarity = document_alignment.get('gold_to_system').get(gold_entity_id).get('aligned_similarity')
+            average_precision = 0
+            self.record_event('ALIGNMENT_INFO', document_id, gold_entity_id, system_entity_id, similarity)
+            if system_entity_id != 'None':
+                average_precision = get_type_scores(self.get('logger'),
+                                                        document_id,
+                                                        gold_entity_id,
+                                                        data['gold'][gold_entity_id],
+                                                        system_entity_id,
+                                                        data['system'][system_entity_id])
+            score = {
+                'average_precision': average_precision,
+                }
+            scores['{}::[SEP]::{}'.format(gold_entity_id, system_entity_id)] = score
+        for system_entity_id in data['system']:
+            gold_entity_id = 'None'
+            if system_entity_id not in document_alignment.get('system_to_gold'):
+                average_precision = 0
+                score = {
+                    'average_precision': average_precision,
+                    }
+                scores['{}::[SEP]::{}'.format(gold_entity_id, system_entity_id)] = score
+                self.record_event('ALIGNMENT_INFO', document_id, gold_entity_id, system_entity_id, similarity)
+        return scores
+
+    def score_responses(self):
+        annotations = self.get('parsed_entries', self.get('gold').get('entries'))
+        responses = self.get('parsed_entries', self.get('system').get('entries'))
+        scores = []
+        mean_average_precision = 0
+        count = 0
+        for document_id in annotations:
+            document_annotations = annotations.get(document_id)
+            document_responses = responses.get(document_id, [])
+            document_alignment = self.get('cluster_alignment').get('document_alignment').get(document_id)
+            document_scores = self.get('document_scores', document_id, document_annotations, document_responses, document_alignment)
+            for gold_entity_id_and_system_entity_id in document_scores:
+                gold_entity_id, system_entity_id = gold_entity_id_and_system_entity_id.split('::[SEP]::')
+                average_precision = document_scores[gold_entity_id_and_system_entity_id]['average_precision']
+                mean_average_precision += average_precision
+                count += 1
+                score = TypeMetricScoreV2(self.logger,
+                                        self.get('run_id'),
+                                        document_id,
+                                        gold_entity_id,
+                                        system_entity_id,
+                                        average_precision)
+                scores.append(score)
+
+        scores_printer = ScorePrinter(self.logger, self.printing_specs, self.separator)
+        for score in multisort(scores, (('document_id', False),
+                                        ('gold_entity_id', False),
+                                        ('system_entity_id', False))):
+            scores_printer.add(score)
+        mean_average_precision = mean_average_precision / count if count else 0
+        mean_score = TypeMetricScoreV2(self.logger,
+                                   self.get('run_id'),
+                                   'Summary',
+                                   '',
+                                   '',
+                                   mean_average_precision,
                                    summary = True)
         scores_printer.add(mean_score)
         self.scores = scores_printer
@@ -935,7 +1051,8 @@ class ScoresManager(Object):
         for key in arguments:
             self.set(key, arguments[key])
         self.metrics = {
-            'TypeMetric': TypeMetricScorer,
+            'TypeMetricV1': TypeMetricScorerV1,
+            'TypeMetricV2': TypeMetricScorerV2,
             }
         self.separator = separator
         self.scores = Container(logger)
