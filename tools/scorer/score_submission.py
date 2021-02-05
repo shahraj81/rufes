@@ -742,9 +742,9 @@ class TypeMetricScoreV1(Score):
 
 class TypeMetricScorerV1(Scorer):
     """
-    Class for type metric scores.
+    Class for variant # 1 of the type metric scores.
 
-    This variant of the scorer considers all types asserted on the cluster as a set and uses this set to compute
+    This variant of the scorer considers all types asserted on the cluster as a set, and uses this set to compute
     precision, recall and F1.
     """
 
@@ -940,11 +940,11 @@ class TypeMetricScoreV2(Score):
 
 class TypeMetricScorerV2(Scorer):
     """
-    Class for type metric scores.
+    Class for variant # 2 of the type metric scores.
 
-    This variant of the scorer considers ranks the types asserted on the cluster and compute AP.
-
-    The ranking is induced using weights on types. The weight of a type is computed using the number of mentions asserting that type.
+    This variant of the scorer ranks the types asserted on the cluster, and computes AP where:
+        * ranking is induced using weights on types, and
+        * the weights on a type is the number of mentions asserting that type.
     """
 
     printing_specs = [{'name': 'document_id',      'header': 'DocID',           'format': 's',    'justify': 'L'},
@@ -1070,11 +1070,11 @@ class TypeMetricScorerV2(Scorer):
 
 class TypeMetricScorerV3(TypeMetricScorerV2):
     """
-    Class for type metric scores.
+    Class for variant # 3 of the type metric scores.
 
-    This variant of the scorer considers ranks the types asserted on the cluster and compute AP.
-
-    The ranking is induced using weights on types. The weight of a type is computed using the confidence on mentions asserting that type.
+    This variant of the scorer ranks the types asserted on the cluster, and computes AP where:
+        * ranking is induced using weights on types, and
+        * the weight on a type is computed as the sum of confidences on mentions asserting that type.
     """
 
     def __init__(self, logger, separator=None, **kwargs):
