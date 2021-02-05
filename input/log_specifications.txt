@@ -7,3 +7,4 @@ INFO      ALIGNMENT_INFO                  DOCID: {} GOLD_ENTITY:{} SYSTEM_ENTITY
 INFO      ENTITY_TYPES_INFO               {} DOCID: {} ENTITY:{} TYPES: {} EXPANDED: {}
 INFO      SIMILARITY_INFO2                DOCID: {} GOLD: {} SYSTEM: {} SIMILARITY: {} COMMON_MENTIONS: {}
 INFO      SIMILARITY_INFO                 {}::{}::{}::{}::{}
+INFO      AP_INFO                         METRIC: {} RANK: {} TYPE: {} LABEL: {} WEIGHT: {} NUM_CORRECT: {} SUM_PRECISION: {}

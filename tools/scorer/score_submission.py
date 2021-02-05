@@ -987,9 +987,12 @@ class TypeMetricScorerV2(Scorer):
         for type_weight in multisort(type_weights, (('weight', True),
                                                     ('type', False))):
             rank += 1
+            label = 'WRONG'
             if type_weight.get('type') in entity_types.get('gold'):
+                label = 'RIGHT'
                 num_correct += 1
                 sum_precision += (num_correct/rank)
+            self.record_event('AP_INFO', 'TypeMetricScorerV2', rank, type_weight.get('type'), label, type_weight.get('weight'), num_correct, sum_precision)
 
         average_precision = sum_precision/len(entity_types.get('gold'))
         return average_precision
@@ -1102,9 +1105,12 @@ class TypeMetricScorerV3(TypeMetricScorerV2):
         for type_weight in multisort(type_weights, (('weight', True),
                                                     ('type', False))):
             rank += 1
+            label = 'WRONG'
             if type_weight.get('type') in entity_types.get('gold'):
+                label = 'RIGHT'
                 num_correct += 1
                 sum_precision += (num_correct/rank)
+            self.record_event('AP_INFO', 'TypeMetricScorerV3', rank, type_weight.get('type'), label, type_weight.get('weight'), num_correct, sum_precision)
 
         average_precision = sum_precision/len(entity_types.get('gold'))
         return average_precision
