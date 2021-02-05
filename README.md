@@ -1,17 +1,17 @@
 # Introduction
 
-December 3, 2020
+February 5, 2020 (version 2020.2.0)
 
 This document describes the usage of the type metric score for RUFES track organized in sections given below:
 
-~~~
 1. Pre-requisites,
-2. How to run the scorer,
-3. How to run the scorer on a demo run,
-4. How to read the scorer output,
-5. How to read the log file,
-6. Revision history
-~~~
+2. Latest version,
+3. How to run the scorer,
+4. How to run the scorer on a demo run,
+5. How to read the scorer output,
+6. How to read the log file,
+7. Revision history
+
 
 # Pre-requisites
 
@@ -21,6 +21,10 @@ In order to run the script you would need to:
 * use python3.9,
 * have python package Munkres installed (use `pip install munkres`).
 ~~~
+
+# Latest version
+
+The latest version of the code is `v2020.2.0` which can be found in branch: `TYPEMETRIC-v2020.2.0`.
 
 # How to run the scorer
 
@@ -65,7 +69,13 @@ python score_submission.py -l ../../input/demo/log.txt -r demo ../../input/log_s
 
 # How to read the scorer output
 
-The scorer produces the following file `TypeMetric-scores.txt` which contains the following columns:
+The scorer produces the following scoring variants:
+
+## TypeMetricV1
+
+This variant uses all the types asserted on the cluster as a set, and uses this set to compute Precision, Recall and F1.
+
+The scores corresponding to this variant can be found in file: `TypeMetricV1-scores.txt` which contains the following columns:
 
 - Column # 1: Document ID
 - Column # 2: Run ID
@@ -75,13 +85,49 @@ The scorer produces the following file `TypeMetric-scores.txt` which contains th
 - Column # 6: Recall
 - Column # 7: F1
 
+## TypeMetricV2
+
+This variant of the scorer ranks the types asserted on the cluster, and computes AP where:
+* ranking is induced using weights on types, and
+* the weights on a type is the number of mentions asserting that type.
+
+The scores corresponding to this variant can be found in file: `TypeMetricV2-scores.txt` which contains the following columns:
+
+- Column # 1: Document ID
+- Column # 2: Run ID
+- Column # 3: Gold Entity ID
+- Column # 4: System Entity ID
+- Column # 5: Average Precision
+
+## TypeMetricV3
+
+This variant of the scorer ranks the types asserted on the cluster, and computes AP where:
+* ranking is induced using weights on types, and
+* the weight on a type is computed as the sum of confidences on mentions asserting that type.
+
+The scores corresponding to this variant can be found in file: `TypeMetricV3-scores.txt` which contains the following columns:
+
+- Column # 1: Document ID
+- Column # 2: Run ID
+- Column # 3: Gold Entity ID
+- Column # 4: System Entity ID
+- Column # 5: Average Precision
+
 # How to read the log file
 
 The log file produced by the scorer generates the following types of entries:
 
+## AP_INFO
+
+This type of log entry contains information about the ranked list of types, their correctness, weights, and other information needed to compute AP.
+
 ## ALIGNMENT_INFO
 
-This log entry contains information about which gold-entity was aligned to which system-entity, and the corresponding alingment similarity which is the number of matching mentions.
+This log entry contains information about which gold-entity was aligned to which system-entity, and the corresponding alignment similarity which is the number of matching mentions.
+
+## SIMILARITY_INFO
+
+This type of log entry contains the similarity information, and common mentions between a gold cluster, and a system cluster. This entry exists only if there is any similarity.
 
 ## ENTITY_TYPES_INFO
 
@@ -91,3 +137,7 @@ This log entry contains information about gold or system entity types provided a
 
 ## 12/03/2020:
 * Initial version.
+
+## 02/05/2021:
+* Version # 2020.2.0 released in its own branch.
+* Additional scoring variants added.

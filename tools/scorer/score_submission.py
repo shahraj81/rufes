@@ -25,6 +25,45 @@ def multisort(xs, specs):
         xs.sort(key=lambda x: x.get(key), reverse=reverse)
     return xs
 
+def expanded_types(entity_types):
+    def expand(entity_type):
+        """
+        If the type is:
+            'A.B.C' return ['A', 'A.B', 'A.B.C']
+            'A.B'   return ['A', 'A.B']
+            'A'     return ['A']
+        """
+        metatype = 'Entity'
+        expanded_types = {}
+        elements = entity_type.split('.')
+        for end_index in range(len(elements)):
+            if metatype != 'Entity' and end_index == 0: continue
+            start_index = 0
+            expanded_type_elements = []
+            while start_index <= end_index:
+                expanded_type_elements.append(elements[start_index])
+                start_index += 1
+            if len(expanded_type_elements):
+                expanded_types['.'.join(expanded_type_elements)] = 1
+        return list(expanded_types.keys())
+    expanded_types = set()
+    for entity_type in entity_types:
+        for expanded_type in expand(entity_type):
+            expanded_types.add(expanded_type)
+    return expanded_types
+
+def parse_entries(entries):
+        parsed_entries = {}
+        for entry in entries:
+            document_id = entry.get('mention_span').split(':')[0]
+            entity_id = entry.get('entity_id')
+            if document_id not in parsed_entries:
+                parsed_entries[document_id] = {}
+            if entity_id not in parsed_entries[document_id]:
+                parsed_entries[document_id][entity_id] = []
+            parsed_entries[document_id][entity_id].append(entry)
+        return parsed_entries
+
 class Object(object):
     """
     This class represents an AIDA object which is envisioned to be the parent of most of the AIDA related classes.
@@ -486,6 +525,122 @@ class Logger:
         debug_message = "Execution begins {current_dir:" + self.path_name + ", script_name:" + self.file_name + ", arguments:" + self.arguments +"}"
         self.logger_object.info(debug_message)
 
+class ClusterAlignment(Object):
+    """
+    Class for performing alignment, and supporting lookup.
+    """
+
+    def __init__(self, logger, gold, system):
+        super().__init__(logger)
+        self.gold = gold
+        self.system = system
+        self.document_alignment = {}
+        self.align_clusters()
+
+    def get_parsed_entries(self, entries):
+        return(parse_entries(entries))
+
+    def align_clusters(self):
+        def get_max_similarity(similarities):
+            max_similarity = -1 * sys.maxsize
+            for i in similarities:
+                for j in similarities[i]:
+                    if similarities[i][j] > max_similarity:
+                        max_similarity = similarities[i][j]
+            return max_similarity
+        def get_cost_matrix(similarities, mappings):
+            def conditional_transpose(cost_matrix):
+                m = {}
+                rm = {}
+                row_index = 0
+                col_index = 0
+                is_transposed = False
+                for row in cost_matrix:
+                    row_index = 0
+                    for value in row:
+                        if row_index not in m:
+                            m[row_index] = {}
+                        m[row_index][col_index] = value
+                        row_index += 1
+                    col_index += 1
+                if col_index >= row_index:
+                    return is_transposed, cost_matrix
+                else:
+                    is_transposed = True
+                    transposed_matrix = []
+                    for row_index in sorted(m):
+                        transposed_matrix_row = []
+                        for col_index in sorted(m[row_index]):
+                            transposed_matrix_row += [m[row_index][col_index]]
+                        transposed_matrix += [transposed_matrix_row]
+                    return is_transposed, transposed_matrix
+            max_similarity = get_max_similarity(similarities)
+            cost_matrix = []
+            for gold_index in sorted(mappings['gold']['index_to_id']):
+                cost_row = []
+                gold_id = mappings['gold']['index_to_id'][gold_index]
+                for system_index in sorted(mappings['system']['index_to_id']):
+                    system_id = mappings['system']['index_to_id'][system_index]
+                    similarity = 0
+                    if gold_id in similarities and system_id in similarities[gold_id]:
+                        similarity = similarities[gold_id][system_id]
+                    cost_row += [max_similarity - similarity]
+                cost_matrix += [cost_row]
+            return conditional_transpose(cost_matrix)
+        def get_alignment(similarities, mappings):
+            alignment = {'gold_to_system': {}, 'system_to_gold': {}}
+            if len(similarities) > 0:
+                is_transposed, cost_matrix = get_cost_matrix(similarities, mappings)
+                for gold_entity_index, system_entity_index in Munkres().compute(cost_matrix):
+                    if is_transposed:
+                        temp = gold_entity_index
+                        gold_entity_index = system_entity_index
+                        system_entity_index = temp
+                    gold_entity_id = mappings['gold']['index_to_id'][gold_entity_index]
+                    system_entity_id = mappings['system']['index_to_id'][system_entity_index]
+                    similarity = similarities[gold_entity_id][system_entity_id]
+                    if similarity > 0:
+                        alignment.get('gold_to_system')[gold_entity_id] = {
+                                'aligned_to': system_entity_id,
+                                'aligned_similarity': similarity
+                            }
+                        alignment.get('system_to_gold')[system_entity_id] = {
+                                'aligned_to': gold_entity_id,
+                                'aligned_similarity': similarity
+                            }
+            return alignment
+        annotations = self.get('parsed_entries', self.get('gold').get('entries'))
+        responses = self.get('parsed_entries', self.get('system').get('entries'))
+        document_alignment = self.get('document_alignment')
+        for document_id in annotations:
+            data = {
+                'gold': annotations.get(document_id),
+                'system': responses.get(document_id, [])
+                }
+            similarities = {}
+            for gold_entity_id in data['gold']:
+                for system_entity_id in data['system']:
+                    if gold_entity_id not in similarities:
+                        similarities[gold_entity_id] = {}
+                    if system_entity_id not in similarities[gold_entity_id]:
+                        similarities[gold_entity_id][system_entity_id] = 0
+                    gold_mention_spans = set([e.get('mention_span') for e in data['gold'][gold_entity_id]])
+                    system_mention_spans = set([e.get('mention_span') for e in data['system'][system_entity_id]])
+                    common_mentions = gold_mention_spans.intersection(system_mention_spans)
+                    similarity = len(common_mentions)
+                    similarities[gold_entity_id][system_entity_id] = similarity
+                    if similarity > 0:
+                        self.record_event('SIMILARITY_INFO', document_id, gold_entity_id, system_entity_id, similarity, ';'.join(common_mentions))
+            mappings = {}
+            for gold_or_system in ['gold', 'system']:
+                mappings[gold_or_system] = {'id_to_index': {}, 'index_to_id': {}}
+                index = 0;
+                for entity_id in sorted(data[gold_or_system]):
+                    mappings[gold_or_system]['id_to_index'][entity_id] = index
+                    mappings[gold_or_system]['index_to_id'][index] = entity_id
+                    index += 1
+            document_alignment[document_id] = get_alignment(similarities, mappings)
+
 class Score(Object):
     """
     AIDA base class for query-specific derived score class.
@@ -549,7 +704,6 @@ class ScorePrinter(Container):
             string = '{}\n{}'.format(string, self.get_line_text(line))
         return string
 
-
 class Scorer(Object):
     """
     The Scorer class.
@@ -571,9 +725,9 @@ class Scorer(Object):
     def __str__(self):
         return self.get('scores').__str__()
 
-class TypeMetricScore(Score):
+class TypeMetricScoreV1(Score):
     """
-    AIDA class for type metric score.
+    AIDA class for type metric score corresponding to the TypeMetricScorerV1.
     """
     def __init__(self, logger, run_id, document_id, gold_entity_id, system_entity_id, precision, recall, f1, summary=False):
         super().__init__(logger)
@@ -586,9 +740,12 @@ class TypeMetricScore(Score):
         self.f1 = f1
         self.summary = summary
 
-class TypeMetricScorer(Scorer):
+class TypeMetricScorerV1(Scorer):
     """
-    Class for type metric scores.
+    Class for variant # 1 of the type metric scores.
+
+    This variant of the scorer considers all types asserted on the cluster as a set, and uses this set to compute
+    precision, recall and F1.
     """
 
     printing_specs = [{'name': 'document_id',      'header': 'DocID',           'format': 's',    'justify': 'L'},
@@ -605,7 +762,7 @@ class TypeMetricScorer(Scorer):
     def order(self, k):
         return k
 
-    def get_document_scores(self, document_id, document_annotations, document_responses):
+    def get_document_scores(self, document_id, document_annotations, document_responses, document_alignment):
         def get_max_similarity(similarities):
             max_similarity = -1 * sys.maxsize
             for i in similarities:
@@ -654,33 +811,6 @@ class TypeMetricScorer(Scorer):
                 cost_matrix += [cost_row]
             return conditional_transpose(cost_matrix)
 
-        def get_expanded_types(entity_types):
-            def expand(entity_type):
-                """
-                If the type is:
-                    'A.B.C' return ['A', 'A.B', 'A.B.C']
-                    'A.B'   return ['A', 'A.B']
-                    'A'     return ['A']
-                """
-                metatype = 'Entity'
-                expanded_types = {}
-                elements = entity_type.split('.')
-                for end_index in range(len(elements)):
-                    if metatype != 'Entity' and end_index == 0: continue
-                    start_index = 0
-                    expanded_type_elements = []
-                    while start_index <= end_index:
-                        expanded_type_elements.append(elements[start_index])
-                        start_index += 1
-                    if len(expanded_type_elements):
-                        expanded_types['.'.join(expanded_type_elements)] = 1
-                return list(expanded_types.keys())
-            expanded_types = set()
-            for entity_type in entity_types:
-                for expanded_type in expand(entity_type):
-                    expanded_types.add(expanded_type)
-            return expanded_types
-
         def get_precision_recall_and_f1(relevant, retrieved):
             precision = len(relevant & retrieved) / len(retrieved) if len(retrieved) else 0
             recall = len(relevant & retrieved) / len(relevant)
@@ -696,7 +826,7 @@ class TypeMetricScorer(Scorer):
                 for entry in entries[gold_or_system]:
                     for entity_type in entry.get('entity_types').split(';'):
                         entity_types.add(entity_type)
-                    for expanded_entity_type in get_expanded_types(list(entry.get('entity_types').split(';'))):
+                    for expanded_entity_type in expanded_types(list(entry.get('entity_types').split(';'))):
                         types[gold_or_system].add(expanded_entity_type)
                 logger.record_event('ENTITY_TYPES_INFO',
                                     gold_or_system.upper(),
@@ -707,64 +837,17 @@ class TypeMetricScorer(Scorer):
                                     )
             return get_precision_recall_and_f1(types['gold'], types['system'])
 
-        def get_alignment(similarities, mappings):
-            alignment = {'gold_to_system': {}, 'system_to_gold': {}}
-            if len(similarities) > 0:
-                is_transposed, cost_matrix = get_cost_matrix(similarities, mappings)
-                for gold_entity_index, system_entity_index in Munkres().compute(cost_matrix):
-                    if is_transposed:
-                        temp = gold_entity_index
-                        gold_entity_index = system_entity_index
-                        system_entity_index = temp
-                    gold_entity_id = mappings['gold']['index_to_id'][gold_entity_index]
-                    system_entity_id = mappings['system']['index_to_id'][system_entity_index]
-                    similarity = similarities[gold_entity_id][system_entity_id]
-                    if similarity > 0:
-                        alignment.get('gold_to_system')[gold_entity_id] = {
-                                'aligned_to': system_entity_id,
-                                'aligned_similarity': similarity
-                            }
-                        alignment.get('system_to_gold')[system_entity_id] = {
-                                'aligned_to': gold_entity_id,
-                                'aligned_similarity': similarity
-                            }
-            return alignment
-
         data = {
-            'gold': document_annotations,
-            'system': document_responses
-            }
-        similarities = {}
-        for gold_entity_id in data['gold']:
-            for system_entity_id in data['system']:
-                if gold_entity_id not in similarities:
-                    similarities[gold_entity_id] = {}
-                if system_entity_id not in similarities[gold_entity_id]:
-                    similarities[gold_entity_id][system_entity_id] = 0
-                gold_mention_spans = set([e.get('mention_span') for e in data['gold'][gold_entity_id]])
-                system_mention_spans = set([e.get('mention_span') for e in data['system'][system_entity_id]])
-                common_mentions = gold_mention_spans.intersection(system_mention_spans)
-                similarity = len(common_mentions)
-                similarities[gold_entity_id][system_entity_id] = similarity
-                if similarity > 0:
-                    self.record_event('SIMILARITY_INFO', document_id, gold_entity_id, system_entity_id, similarity, ';'.join(common_mentions))
-        mappings = {}
-        for gold_or_system in ['gold', 'system']:
-            mappings[gold_or_system] = {'id_to_index': {}, 'index_to_id': {}}
-            index = 0;
-            for entity_id in sorted(data[gold_or_system]):
-                mappings[gold_or_system]['id_to_index'][entity_id] = index
-                mappings[gold_or_system]['index_to_id'][index] = entity_id
-                index += 1
-
-        alignment = get_alignment(similarities, mappings)
+                'gold': self.get('parsed_entries', self.get('gold').get('entries')).get(document_id),
+                'system': self.get('parsed_entries', self.get('system').get('entries')).get(document_id, [])
+                }
         scores = {}
         for gold_entity_id in data['gold']:
             system_entity_id = 'None'
             similarity = 'None'
-            if gold_entity_id in alignment.get('gold_to_system'):
-                system_entity_id = alignment.get('gold_to_system').get(gold_entity_id).get('aligned_to')
-                similarity = alignment.get('gold_to_system').get(gold_entity_id).get('aligned_similarity')
+            if gold_entity_id in document_alignment.get('gold_to_system'):
+                system_entity_id = document_alignment.get('gold_to_system').get(gold_entity_id).get('aligned_to')
+                similarity = document_alignment.get('gold_to_system').get(gold_entity_id).get('aligned_similarity')
             precision, recall, f1 = 0,0,0
             self.record_event('ALIGNMENT_INFO', document_id, gold_entity_id, system_entity_id, similarity)
             if system_entity_id != 'None':
@@ -782,7 +865,7 @@ class TypeMetricScorer(Scorer):
             scores['{}::[SEP]::{}'.format(gold_entity_id, system_entity_id)] = score
         for system_entity_id in data['system']:
             gold_entity_id = 'None'
-            if system_entity_id not in alignment.get('system_to_gold'):
+            if system_entity_id not in document_alignment.get('system_to_gold'):
                 precision, recall, f1 = 0,0,0
                 score = {
                     'precision': precision,
@@ -794,16 +877,7 @@ class TypeMetricScorer(Scorer):
         return scores
 
     def get_parsed_entries(self, entries):
-        parsed_entries = {}
-        for entry in entries:
-            document_id = entry.get('mention_span').split(':')[0]
-            entity_id = entry.get('entity_id')
-            if document_id not in parsed_entries:
-                parsed_entries[document_id] = {}
-            if entity_id not in parsed_entries[document_id]:
-                parsed_entries[document_id][entity_id] = []
-            parsed_entries[document_id][entity_id].append(entry)
-        return parsed_entries
+        return(parse_entries(entries))
 
     def score_responses(self):
         annotations = self.get('parsed_entries', self.get('gold').get('entries'))
@@ -814,7 +888,8 @@ class TypeMetricScorer(Scorer):
         for document_id in annotations:
             document_annotations = annotations.get(document_id)
             document_responses = responses.get(document_id, [])
-            document_scores = self.get('document_scores', document_id, document_annotations, document_responses)
+            document_alignment = self.get('cluster_alignment').get('document_alignment').get(document_id)
+            document_scores = self.get('document_scores', document_id, document_annotations, document_responses, document_alignment)
             for gold_entity_id_and_system_entity_id in document_scores:
                 gold_entity_id, system_entity_id = gold_entity_id_and_system_entity_id.split('::[SEP]::')
                 precision = document_scores[gold_entity_id_and_system_entity_id]['precision']
@@ -822,7 +897,7 @@ class TypeMetricScorer(Scorer):
                 f1 = document_scores[gold_entity_id_and_system_entity_id]['f1']
                 mean_f1 += f1
                 count += 1
-                score = TypeMetricScore(self.logger,
+                score = TypeMetricScoreV1(self.logger,
                                         self.get('run_id'),
                                         document_id,
                                         gold_entity_id,
@@ -838,7 +913,7 @@ class TypeMetricScorer(Scorer):
                                         ('system_entity_id', False))):
             scores_printer.add(score)
         mean_f1 = mean_f1 / count if count else 0
-        mean_score = TypeMetricScore(self.logger,
+        mean_score = TypeMetricScoreV1(self.logger,
                                    self.get('run_id'),
                                    'Summary',
                                    '',
@@ -850,6 +925,197 @@ class TypeMetricScorer(Scorer):
         scores_printer.add(mean_score)
         self.scores = scores_printer
 
+class TypeMetricScoreV2(Score):
+    """
+    AIDA class for type metric score corresponding to the TypeMetricScorerV2.
+    """
+    def __init__(self, logger, run_id, document_id, gold_entity_id, system_entity_id, average_precision, summary=False):
+        super().__init__(logger)
+        self.run_id = run_id
+        self.document_id = document_id
+        self.gold_entity_id = gold_entity_id if gold_entity_id is not None else 'None'
+        self.system_entity_id = system_entity_id if system_entity_id is not None else 'None'
+        self.average_precision = average_precision
+        self.summary = summary
+
+class TypeMetricScorerV2(Scorer):
+    """
+    Class for variant # 2 of the type metric scores.
+
+    This variant of the scorer ranks the types asserted on the cluster, and computes AP where:
+        * ranking is induced using weights on types, and
+        * the weights on a type is the number of mentions asserting that type.
+    """
+
+    printing_specs = [{'name': 'document_id',      'header': 'DocID',           'format': 's',    'justify': 'L'},
+                      {'name': 'run_id',           'header': 'RunID',           'format': 's',    'justify': 'L'},
+                      {'name': 'gold_entity_id',   'header': 'GoldEntityID',    'format': 's',    'justify': 'L'},
+                      {'name': 'system_entity_id', 'header': 'SystemEntityID',  'format': 's',    'justify': 'L'},
+                      {'name': 'average_precision','header': 'AveragePrecision','format': '6.4f', 'justify': 'R', 'mean_format': '6.4f'}]
+
+    def __init__(self, logger, separator=None, **kwargs):
+        super().__init__(logger, separator=separator, **kwargs)
+
+    def order(self, k):
+        return k
+
+    def get_parsed_entries(self, entries):
+        return(parse_entries(entries))
+
+    def get_document_type_scores(self, document_id, gold_entity_id, gold_entries, system_entity_id, system_entries):
+        average_precision = 0.0
+        entity_types = {'gold': {}, 'system': {}}
+        entries = {'gold': gold_entries, 'system': system_entries}
+        for gold_or_system in entity_types:
+            for entry in entries.get(gold_or_system):
+                for expanded_entity_type in expanded_types(list(entry.get('entity_types').split(';'))):
+                    if expanded_entity_type not in entity_types.get(gold_or_system):
+                        entity_types.get(gold_or_system)[expanded_entity_type] = list()
+                    entity_types.get(gold_or_system).get(expanded_entity_type).append(entry)
+
+        type_weights = list()
+        for expanded_entity_type in entity_types.get(gold_or_system):
+            type_weight = {
+                'type': expanded_entity_type,
+                'weight': len(entity_types.get(gold_or_system).get(expanded_entity_type))
+                }
+            type_weights.append(type_weight)
+
+        rank = 0
+        num_correct = 0
+        sum_precision = 0.0
+        for type_weight in multisort(type_weights, (('weight', True),
+                                                    ('type', False))):
+            rank += 1
+            label = 'WRONG'
+            if type_weight.get('type') in entity_types.get('gold'):
+                label = 'RIGHT'
+                num_correct += 1
+                sum_precision += (num_correct/rank)
+            self.record_event('AP_INFO', 'TypeMetricScorerV2', rank, type_weight.get('type'), label, type_weight.get('weight'), num_correct, sum_precision)
+
+        average_precision = sum_precision/len(entity_types.get('gold'))
+        return average_precision
+
+    def get_document_scores(self, document_id, document_annotations, document_responses, document_alignment):
+        data = {
+                'gold': self.get('parsed_entries', self.get('gold').get('entries')).get(document_id),
+                'system': self.get('parsed_entries', self.get('system').get('entries')).get(document_id, [])
+                }
+        scores = {}
+        for gold_entity_id in data['gold']:
+            system_entity_id = 'None'
+            similarity = 'None'
+            if gold_entity_id in document_alignment.get('gold_to_system'):
+                system_entity_id = document_alignment.get('gold_to_system').get(gold_entity_id).get('aligned_to')
+                similarity = document_alignment.get('gold_to_system').get(gold_entity_id).get('aligned_similarity')
+            average_precision = 0
+            self.record_event('ALIGNMENT_INFO', document_id, gold_entity_id, system_entity_id, similarity)
+            if system_entity_id != 'None':
+                average_precision = self.get('document_type_scores', document_id, gold_entity_id, data['gold'][gold_entity_id], system_entity_id, data['system'][system_entity_id])
+            score = {
+                'average_precision': average_precision,
+                }
+            scores['{}::[SEP]::{}'.format(gold_entity_id, system_entity_id)] = score
+        for system_entity_id in data['system']:
+            gold_entity_id = 'None'
+            if system_entity_id not in document_alignment.get('system_to_gold'):
+                average_precision = 0
+                score = {
+                    'average_precision': average_precision,
+                    }
+                scores['{}::[SEP]::{}'.format(gold_entity_id, system_entity_id)] = score
+                self.record_event('ALIGNMENT_INFO', document_id, gold_entity_id, system_entity_id, similarity)
+        return scores
+
+    def score_responses(self):
+        annotations = self.get('parsed_entries', self.get('gold').get('entries'))
+        responses = self.get('parsed_entries', self.get('system').get('entries'))
+        scores = []
+        mean_average_precision = 0
+        count = 0
+        for document_id in annotations:
+            document_annotations = annotations.get(document_id)
+            document_responses = responses.get(document_id, [])
+            document_alignment = self.get('cluster_alignment').get('document_alignment').get(document_id)
+            document_scores = self.get('document_scores', document_id, document_annotations, document_responses, document_alignment)
+            for gold_entity_id_and_system_entity_id in document_scores:
+                gold_entity_id, system_entity_id = gold_entity_id_and_system_entity_id.split('::[SEP]::')
+                average_precision = document_scores[gold_entity_id_and_system_entity_id]['average_precision']
+                mean_average_precision += average_precision
+                count += 1
+                score = TypeMetricScoreV2(self.logger,
+                                        self.get('run_id'),
+                                        document_id,
+                                        gold_entity_id,
+                                        system_entity_id,
+                                        average_precision)
+                scores.append(score)
+
+        scores_printer = ScorePrinter(self.logger, self.printing_specs, self.separator)
+        for score in multisort(scores, (('document_id', False),
+                                        ('gold_entity_id', False),
+                                        ('system_entity_id', False))):
+            scores_printer.add(score)
+        mean_average_precision = mean_average_precision / count if count else 0
+        mean_score = TypeMetricScoreV2(self.logger,
+                                   self.get('run_id'),
+                                   'Summary',
+                                   '',
+                                   '',
+                                   mean_average_precision,
+                                   summary = True)
+        scores_printer.add(mean_score)
+        self.scores = scores_printer
+
+class TypeMetricScorerV3(TypeMetricScorerV2):
+    """
+    Class for variant # 3 of the type metric scores.
+
+    This variant of the scorer ranks the types asserted on the cluster, and computes AP where:
+        * ranking is induced using weights on types, and
+        * the weight on a type is computed as the sum of confidences on mentions asserting that type.
+    """
+
+    def __init__(self, logger, separator=None, **kwargs):
+        super().__init__(logger, separator=separator, **kwargs)
+
+    def get_document_type_scores(self, document_id, gold_entity_id, gold_entries, system_entity_id, system_entries):
+        average_precision = 0.0
+        entity_types = {'gold': {}, 'system': {}}
+        entries = {'gold': gold_entries, 'system': system_entries}
+        for gold_or_system in entity_types:
+            for entry in entries.get(gold_or_system):
+                for expanded_entity_type in expanded_types(list(entry.get('entity_types').split(';'))):
+                    if expanded_entity_type not in entity_types.get(gold_or_system):
+                        entity_types.get(gold_or_system)[expanded_entity_type] = 0
+                    entity_types.get(gold_or_system)[expanded_entity_type] += float(entry.get('confidence'))
+
+        type_weights = list()
+        for expanded_entity_type in entity_types.get(gold_or_system):
+            type_weight = {
+                'type': expanded_entity_type,
+                'weight': entity_types.get(gold_or_system).get(expanded_entity_type)
+                }
+            type_weights.append(type_weight)
+
+        rank = 0
+        num_correct = 0
+        sum_precision = 0.0
+        for type_weight in multisort(type_weights, (('weight', True),
+                                                    ('type', False))):
+            rank += 1
+            label = 'WRONG'
+            if type_weight.get('type') in entity_types.get('gold'):
+                label = 'RIGHT'
+                num_correct += 1
+                sum_precision += (num_correct/rank)
+            self.record_event('AP_INFO', 'TypeMetricScorerV3', rank, type_weight.get('type'), label, type_weight.get('weight'), num_correct, sum_precision)
+
+        average_precision = sum_precision/len(entity_types.get('gold'))
+        return average_precision
+
+
 class ScoresManager(Object):
     """
     The class for managing scores.
@@ -860,7 +1126,9 @@ class ScoresManager(Object):
         for key in arguments:
             self.set(key, arguments[key])
         self.metrics = {
-            'TypeMetric': TypeMetricScorer,
+            'TypeMetricV1': TypeMetricScorerV1,
+            'TypeMetricV2': TypeMetricScorerV2,
+            'TypeMetricV3': TypeMetricScorerV3,
             }
         self.separator = separator
         self.scores = Container(logger)
@@ -872,6 +1140,7 @@ class ScoresManager(Object):
                                                  run_id=self.get('run_id'),
                                                  gold=self.get('gold'),
                                                  system=self.get('system'),
+                                                 cluster_alignment=self.get('cluster_alignment'),
                                                  separator=self.get('separator'))
             self.get('scores').add(key=metric, value=scorer)
 
@@ -904,8 +1173,10 @@ def main(args):
     header = ['run_id', 'mention_id', 'mention_string', 'mention_span', 'entity_id', 'entity_types', 'mention_type', 'confidence']
     gold = FileHandler(logger, args.gold, header=FileHeader(logger, '\t'.join(header)), encoding='utf-8')
     system = FileHandler(logger, args.system, header=FileHeader(logger, '\t'.join(header)), encoding='utf-8')
+    cluster_alignment = ClusterAlignment(logger, gold, system)
     arguments = {
         'run_id': args.run,
+        'cluster_alignment': cluster_alignment,
         'gold': gold,
         'system': system
         }
