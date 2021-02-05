@@ -25,6 +25,33 @@ def multisort(xs, specs):
         xs.sort(key=lambda x: x.get(key), reverse=reverse)
     return xs
 
+def expanded_types(entity_types):
+    def expand(entity_type):
+        """
+        If the type is:
+            'A.B.C' return ['A', 'A.B', 'A.B.C']
+            'A.B'   return ['A', 'A.B']
+            'A'     return ['A']
+        """
+        metatype = 'Entity'
+        expanded_types = {}
+        elements = entity_type.split('.')
+        for end_index in range(len(elements)):
+            if metatype != 'Entity' and end_index == 0: continue
+            start_index = 0
+            expanded_type_elements = []
+            while start_index <= end_index:
+                expanded_type_elements.append(elements[start_index])
+                start_index += 1
+            if len(expanded_type_elements):
+                expanded_types['.'.join(expanded_type_elements)] = 1
+        return list(expanded_types.keys())
+    expanded_types = set()
+    for entity_type in entity_types:
+        for expanded_type in expand(entity_type):
+            expanded_types.add(expanded_type)
+    return expanded_types
+
 def parse_entries(entries):
         parsed_entries = {}
         for entry in entries:
@@ -784,32 +811,7 @@ class TypeMetricScorerV1(Scorer):
                 cost_matrix += [cost_row]
             return conditional_transpose(cost_matrix)
 
-        def get_expanded_types(entity_types):
-            def expand(entity_type):
-                """
-                If the type is:
-                    'A.B.C' return ['A', 'A.B', 'A.B.C']
-                    'A.B'   return ['A', 'A.B']
-                    'A'     return ['A']
-                """
-                metatype = 'Entity'
-                expanded_types = {}
-                elements = entity_type.split('.')
-                for end_index in range(len(elements)):
-                    if metatype != 'Entity' and end_index == 0: continue
-                    start_index = 0
-                    expanded_type_elements = []
-                    while start_index <= end_index:
-                        expanded_type_elements.append(elements[start_index])
-                        start_index += 1
-                    if len(expanded_type_elements):
-                        expanded_types['.'.join(expanded_type_elements)] = 1
-                return list(expanded_types.keys())
-            expanded_types = set()
-            for entity_type in entity_types:
-                for expanded_type in expand(entity_type):
-                    expanded_types.add(expanded_type)
-            return expanded_types
+
 
         def get_precision_recall_and_f1(relevant, retrieved):
             precision = len(relevant & retrieved) / len(retrieved) if len(retrieved) else 0
@@ -826,7 +828,7 @@ class TypeMetricScorerV1(Scorer):
                 for entry in entries[gold_or_system]:
                     for entity_type in entry.get('entity_types').split(';'):
                         entity_types.add(entity_type)
-                    for expanded_entity_type in get_expanded_types(list(entry.get('entity_types').split(';'))):
+                    for expanded_entity_type in expanded_types(list(entry.get('entity_types').split(';'))):
                         types[gold_or_system].add(expanded_entity_type)
                 logger.record_event('ENTITY_TYPES_INFO',
                                     gold_or_system.upper(),
@@ -964,8 +966,37 @@ class TypeMetricScorerV2(Scorer):
 
     def get_document_scores(self, document_id, document_annotations, document_responses, document_alignment):
         def get_type_scores(logger, document_id, gold_entity_id, gold_entries, system_entity_id, system_entries):
-            average_precision = 0.8
+            average_precision = 0.0
+            entity_types = {'gold': {}, 'system': {}}
+            entries = {'gold': gold_entries, 'system': system_entries}
+            for gold_or_system in entity_types:
+                for entry in entries.get(gold_or_system):
+                    for expanded_entity_type in expanded_types(list(entry.get('entity_types').split(';'))):
+                        if expanded_entity_type not in entity_types.get(gold_or_system):
+                            entity_types.get(gold_or_system)[expanded_entity_type] = list()
+                        entity_types.get(gold_or_system).get(expanded_entity_type).append(entry)
+
+            type_weights = list()
+            for expanded_entity_type in entity_types.get(gold_or_system):
+                type_weight = {
+                    'type': expanded_entity_type,
+                    'weight': len(entity_types.get(gold_or_system).get(expanded_entity_type))
+                    }
+                type_weights.append(type_weight)
+
+            rank = 0
+            num_correct = 0
+            sum_precision = 0.0
+            for type_weight in multisort(type_weights, (('weight', True),
+                                        ('type', False))):
+                rank += 1
+                if type_weight.get('type') in entity_types.get('gold'):
+                    num_correct += 1
+                    sum_precision += (num_correct/rank)
+
+            average_precision = sum_precision/len(entity_types.get('gold'))
             return average_precision
+
         data = {
                 'gold': self.get('parsed_entries', self.get('gold').get('entries')).get(document_id),
                 'system': self.get('parsed_entries', self.get('system').get('entries')).get(document_id, [])
