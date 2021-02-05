@@ -944,7 +944,7 @@ class TypeMetricScorerV2(Scorer):
 
     This variant of the scorer considers ranks the types asserted on the cluster and compute AP.
 
-    The ranking is induced using weights on types. The weight of a type is computed using the fraction of mentions that assertion that type.
+    The ranking is induced using weights on types. The weight of a type is computed using the number of mentions asserting that type.
     """
 
     printing_specs = [{'name': 'document_id',      'header': 'DocID',           'format': 's',    'justify': 'L'},
@@ -1065,6 +1065,51 @@ class TypeMetricScorerV2(Scorer):
         scores_printer.add(mean_score)
         self.scores = scores_printer
 
+class TypeMetricScorerV3(TypeMetricScorerV2):
+    """
+    Class for type metric scores.
+
+    This variant of the scorer considers ranks the types asserted on the cluster and compute AP.
+
+    The ranking is induced using weights on types. The weight of a type is computed using the confidence on mentions asserting that type.
+    """
+
+    def __init__(self, logger, separator=None, **kwargs):
+        super().__init__(logger, separator=separator, **kwargs)
+
+    def get_document_type_scores(self, document_id, gold_entity_id, gold_entries, system_entity_id, system_entries):
+        average_precision = 0.0
+        entity_types = {'gold': {}, 'system': {}}
+        entries = {'gold': gold_entries, 'system': system_entries}
+        for gold_or_system in entity_types:
+            for entry in entries.get(gold_or_system):
+                for expanded_entity_type in expanded_types(list(entry.get('entity_types').split(';'))):
+                    if expanded_entity_type not in entity_types.get(gold_or_system):
+                        entity_types.get(gold_or_system)[expanded_entity_type] = 0
+                    entity_types.get(gold_or_system)[expanded_entity_type] += float(entry.get('confidence'))
+
+        type_weights = list()
+        for expanded_entity_type in entity_types.get(gold_or_system):
+            type_weight = {
+                'type': expanded_entity_type,
+                'weight': entity_types.get(gold_or_system).get(expanded_entity_type)
+                }
+            type_weights.append(type_weight)
+
+        rank = 0
+        num_correct = 0
+        sum_precision = 0.0
+        for type_weight in multisort(type_weights, (('weight', True),
+                                                    ('type', False))):
+            rank += 1
+            if type_weight.get('type') in entity_types.get('gold'):
+                num_correct += 1
+                sum_precision += (num_correct/rank)
+
+        average_precision = sum_precision/len(entity_types.get('gold'))
+        return average_precision
+
+
 class ScoresManager(Object):
     """
     The class for managing scores.
@@ -1077,6 +1122,7 @@ class ScoresManager(Object):
         self.metrics = {
             'TypeMetricV1': TypeMetricScorerV1,
             'TypeMetricV2': TypeMetricScorerV2,
+            'TypeMetricV3': TypeMetricScorerV3,
             }
         self.separator = separator
         self.scores = Container(logger)
