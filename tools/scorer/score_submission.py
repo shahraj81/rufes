@@ -811,8 +811,6 @@ class TypeMetricScorerV1(Scorer):
                 cost_matrix += [cost_row]
             return conditional_transpose(cost_matrix)
 
-
-
         def get_precision_recall_and_f1(relevant, retrieved):
             precision = len(relevant & retrieved) / len(retrieved) if len(retrieved) else 0
             recall = len(relevant & retrieved) / len(relevant)
@@ -964,39 +962,39 @@ class TypeMetricScorerV2(Scorer):
     def get_parsed_entries(self, entries):
         return(parse_entries(entries))
 
+    def get_document_type_scores(self, document_id, gold_entity_id, gold_entries, system_entity_id, system_entries):
+        average_precision = 0.0
+        entity_types = {'gold': {}, 'system': {}}
+        entries = {'gold': gold_entries, 'system': system_entries}
+        for gold_or_system in entity_types:
+            for entry in entries.get(gold_or_system):
+                for expanded_entity_type in expanded_types(list(entry.get('entity_types').split(';'))):
+                    if expanded_entity_type not in entity_types.get(gold_or_system):
+                        entity_types.get(gold_or_system)[expanded_entity_type] = list()
+                    entity_types.get(gold_or_system).get(expanded_entity_type).append(entry)
+
+        type_weights = list()
+        for expanded_entity_type in entity_types.get(gold_or_system):
+            type_weight = {
+                'type': expanded_entity_type,
+                'weight': len(entity_types.get(gold_or_system).get(expanded_entity_type))
+                }
+            type_weights.append(type_weight)
+
+        rank = 0
+        num_correct = 0
+        sum_precision = 0.0
+        for type_weight in multisort(type_weights, (('weight', True),
+                                    ('type', False))):
+            rank += 1
+            if type_weight.get('type') in entity_types.get('gold'):
+                num_correct += 1
+                sum_precision += (num_correct/rank)
+
+        average_precision = sum_precision/len(entity_types.get('gold'))
+        return average_precision
+
     def get_document_scores(self, document_id, document_annotations, document_responses, document_alignment):
-        def get_type_scores(logger, document_id, gold_entity_id, gold_entries, system_entity_id, system_entries):
-            average_precision = 0.0
-            entity_types = {'gold': {}, 'system': {}}
-            entries = {'gold': gold_entries, 'system': system_entries}
-            for gold_or_system in entity_types:
-                for entry in entries.get(gold_or_system):
-                    for expanded_entity_type in expanded_types(list(entry.get('entity_types').split(';'))):
-                        if expanded_entity_type not in entity_types.get(gold_or_system):
-                            entity_types.get(gold_or_system)[expanded_entity_type] = list()
-                        entity_types.get(gold_or_system).get(expanded_entity_type).append(entry)
-
-            type_weights = list()
-            for expanded_entity_type in entity_types.get(gold_or_system):
-                type_weight = {
-                    'type': expanded_entity_type,
-                    'weight': len(entity_types.get(gold_or_system).get(expanded_entity_type))
-                    }
-                type_weights.append(type_weight)
-
-            rank = 0
-            num_correct = 0
-            sum_precision = 0.0
-            for type_weight in multisort(type_weights, (('weight', True),
-                                        ('type', False))):
-                rank += 1
-                if type_weight.get('type') in entity_types.get('gold'):
-                    num_correct += 1
-                    sum_precision += (num_correct/rank)
-
-            average_precision = sum_precision/len(entity_types.get('gold'))
-            return average_precision
-
         data = {
                 'gold': self.get('parsed_entries', self.get('gold').get('entries')).get(document_id),
                 'system': self.get('parsed_entries', self.get('system').get('entries')).get(document_id, [])
@@ -1011,12 +1009,7 @@ class TypeMetricScorerV2(Scorer):
             average_precision = 0
             self.record_event('ALIGNMENT_INFO', document_id, gold_entity_id, system_entity_id, similarity)
             if system_entity_id != 'None':
-                average_precision = get_type_scores(self.get('logger'),
-                                                        document_id,
-                                                        gold_entity_id,
-                                                        data['gold'][gold_entity_id],
-                                                        system_entity_id,
-                                                        data['system'][system_entity_id])
+                average_precision = self.get('document_type_scores', document_id, gold_entity_id, data['gold'][gold_entity_id], system_entity_id, data['system'][system_entity_id])
             score = {
                 'average_precision': average_precision,
                 }
