@@ -985,7 +985,7 @@ class TypeMetricScorerV2(Scorer):
         num_correct = 0
         sum_precision = 0.0
         for type_weight in multisort(type_weights, (('weight', True),
-                                    ('type', False))):
+                                                    ('type', False))):
             rank += 1
             if type_weight.get('type') in entity_types.get('gold'):
                 num_correct += 1
