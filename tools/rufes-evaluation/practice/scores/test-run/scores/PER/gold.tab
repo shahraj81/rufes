@@ -1,0 +1,12 @@
+NIST	annotation-0	rich	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:46-49	the rich	PER	NOM	1.0
+NIST	annotation-22	spokesperson	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:934-945	CRS	PER;PER.CivilServant;PER.CivilServant.Spokesperson	NOM	1.0
+NIST	annotation-23	Janine D'Addario	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:947-962	Addario	PER;PER.CivilServant;PER.CivilServant.Spokesperson	NAM	1.0
+NIST	annotation-32	rich	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1265-1268	the rich	PER	NOM	1.0
+NIST	annotation-34	taxpayers	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1314-1322	the rich	PER	NOM	1.0
+NIST	annotation-40	some	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1534-1537	some people	PER	NOM	1.0
+NIST	annotation-41	taxpayers	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1603-1611	the rich	PER	NOM	1.0
+NIST	annotation-43	others	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1797-1802	other people	PER	NOM	1.0
+NIST	annotation-50	researcher	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:2062-2071	Thomas Hungerford	PER;PER.CivilServant	NOM	1.0
+NIST	annotation-51	Thomas Hungerford	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:2074-2090	Thomas Hungerford	PER;PER.CivilServant	NAM	1.0
+NIST	annotation-64	Antonia Ferrier	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:2493-2507	Ferrier	PER;PER.CivilServant;PER.CivilServant.Spokesperson	NAM	1.0
+NIST	annotation-65	spokesperson	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:2512-2523	republicans	PER;PER.CivilServant;PER.CivilServant.Spokesperson	NOM	1.0

@@ -1,0 +1,186 @@
+"""
+Script for RUFES evaluation pipeline.
+"""
+
+__author__  = "Shahzad Rajput <shahzad.rajput@nist.gov>"
+__status__  = "production"
+__version__ = "0.0.0.1"
+__date__    = "18 May 2021"
+
+from logger import Logger
+
+import argparse
+import json
+import os
+import sys
+
+ALLOK_EXIT_CODE = 0
+ERROR_EXIT_CODE = 255
+
+def call_system(cmd):
+    cmd = ' '.join(cmd.split())
+    print("running system command: '{}'".format(cmd))
+    os.system(cmd)
+
+def record_and_display_message(logger, message):
+    print("----------------------------------------------------------")
+    print(message)
+    print("----------------------------------------------------------")
+    logger.record_event('DEFAULT_INFO', message)
+
+def generate_results_file_and_exit(logger, logs_directory):
+    # current implementation of this function serves as a placeholder
+    scores = {}
+
+    # TODO: obtain error stats and number of errors
+    num_errors = 0
+
+    scores['RunID'] = args.run
+    scores['Total'] = 0.1234
+    scores['Errors'] = num_errors
+    scores['ErrorStats'] = 'TODO'
+    scores['FatalError'] = 'TODO'
+
+    output = {'scores' : [
+                            scores
+                         ]
+            }
+
+    outputdir = "/score/"
+    with open(outputdir + 'results.json', 'w') as fp:
+        json.dump(output, fp, indent=4, sort_keys=True)
+
+    exit_message = 'Done.'
+
+
+    exit_code = ALLOK_EXIT_CODE
+    if num_errors:
+        exit_code = ERROR_EXIT_CODE
+    
+    if exit_code == ERROR_EXIT_CODE:
+        exit_message = 'Fatal error encountered.'
+    record_and_display_message(logger, exit_message)
+
+    exit(exit_code)
+
+def main(args):
+    #############################################################################################
+    # check input/output directory for existence
+    #############################################################################################
+    print("Checking if input/output directories exist.")
+    for path in [args.input, args.output]:
+        if not os.path.exists(path):
+            print('ERROR: Path {} does not exist'.format(path))
+            exit(ERROR_EXIT_CODE)
+    print("Checking if output directory is empty.")
+    files = [f for f in os.listdir(args.output)]
+    if len(files) > 0:
+        print('ERROR: Output directory {} is not empty'.format(args.output))
+        exit(ERROR_EXIT_CODE)
+
+    #############################################################################################
+    # create logger
+    #############################################################################################
+
+    logs_directory = '{output}/{logs}'.format(output=args.output, logs=args.logs)
+    run_log_file = '{logs_directory}/run.log'.format(logs_directory=logs_directory)
+    call_system('mkdir {logs_directory}'.format(logs_directory=logs_directory))
+    logger = Logger(run_log_file, args.spec, sys.argv)
+
+    #############################################################################################
+    # inspect the input directory
+    #############################################################################################
+
+    record_and_display_message(logger, 'Inspecting the input directory.')
+    items = [f for f in os.listdir(args.input)]
+
+    num_files = 0
+    num_directories = 0
+    num_others = 0
+
+    filename = None
+
+    for item in items:
+        if not item.endswith('.tab'):
+            num_others += 1
+        if item.startswith('.'):
+            num_others += 1
+        if os.path.isfile(os.path.join(args.input, item)):
+            if item.endswith('.tab'):
+                filename = item
+            else:
+                num_others += 1
+            num_files += 1
+        elif os.path.isdir(os.path.join(args.input, item)):
+            num_directories += 1
+
+    if num_directories > 0 or num_others > 0 or num_files > 1:
+        logger.record_event('UNEXPECTED_ITEM_FOUND')
+        record_and_display_message(logger, 'Unexpected item found in input directory.')
+        generate_results_file_and_exit(logger, logs_directory)
+
+    if num_files == 0:
+        logger.record_event('NOTHING_TO_SCORE')
+        record_and_display_message(logger, 'Nothing to score.')
+        generate_results_file_and_exit(logger, logs_directory)
+
+    #############################################################################################
+    # Copy system response file into appropriate location
+    #############################################################################################
+
+    record_and_display_message(logger, 'Copying system response file into appropriate location.')
+    destination = '{output}/system_output'.format(output=args.output)
+    call_system('mkdir {destination}'.format(destination=destination))
+    call_system('cp -r {input}/{filename} {destination}'.format(input=args.input, filename=filename, destination=destination))
+
+    #############################################################################################
+    # Copy gold annotations file into appropriate location
+    #############################################################################################
+
+    record_and_display_message(logger, 'Copying gold annotations file into appropriate location.')
+    destination = '{output}/gold'.format(output=args.output)
+    call_system('mkdir {destination}'.format(destination=destination))
+    call_system('cp -r {data}/{gold_filename} {destination}'.format(data=args.data, gold_filename=args.gold, destination=destination))
+
+    #############################################################################################
+    # Generate filtered data
+    #############################################################################################
+
+    record_and_display_message(logger, 'Generating filtered data.')
+    destination = '{output}/scores'.format(output=args.output)
+    call_system('mkdir {destination}'.format(destination=destination))
+    for filter_name in ['ALL', 'NAM', 'NOM', 'PER']:
+        destination = '{output}/scores/{filter_name}'.format(output=args.output, filter_name=filter_name)
+        call_system('mkdir {destination}'.format(destination=destination))
+        call_system('python filter.py {filter_name} {output}/system_output/{filename} {output}/scores/{filter_name}/{filename}'.format(filter_name=filter_name,
+                                                                                                                                       output=args.output,
+                                                                                                                                       filename=filename))
+        call_system('python filter.py {filter_name} {output}/gold/{gold_filename} {output}/scores/{filter_name}/{gold_filename}'.format(filter_name=filter_name,
+                                                                                                                                        output=args.output,
+                                                                                                                                        gold_filename=args.gold))
+
+    #############################################################################################
+    # Score filtered data directories 
+    #############################################################################################
+
+    record_and_display_message(logger, 'Scoring filtered data.')
+    destination = '{output}/scores'.format(output=args.output)
+    call_system('mkdir {destination}'.format(destination=destination))
+    for filter_name in ['ALL', 'NAM', 'NOM', 'PER']:
+        destination = '{output}/scores/{filter_name}'.format(output=args.output, filter_name=filter_name)
+        score_command = 'python score_submission.py -l {logs_directory}/{filter_name}.log -r {runid} ./log_specifications.txt {destination}/{gold_filename} {destination}/{filename} {destination}/score'
+        call_system(score_command.format(logs_directory=logs_directory, filter_name=filter_name, runid=args.run, destination=destination, gold_filename=args.gold, filename=filename))
+    generate_results_file_and_exit(logger, logs_directory)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Run the RUFES evaluation pipeline.")
+    parser.add_argument('-d', '--data', default='/data', help='Specify the data directory (default: %(default)s)')
+    parser.add_argument('-g', '--gold', default='gold.tab', help='Specify the name of the gold annotation data file (default: %(default)s)')
+    parser.add_argument('-i', '--input', default='/evaluate', help='Specify the input directory (default: %(default)s)')
+    parser.add_argument('-l', '--logs', default='logs', help='Specify the name of the logs directory to which different log files should be written (default: %(default)s)')
+    parser.add_argument('-o', '--output', default='/score', help='Specify the input directory (default: %(default)s)')
+    parser.add_argument('-r', '--run', default='system', help='Specify the run name (default: %(default)s)')
+    parser.add_argument('-s', '--spec', default='/scripts/log_specifications.txt', help='Specify the log specifications file (default: %(default)s)')
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__,  help='Print version number and exit')
+    args = parser.parse_args()
+    main(args)

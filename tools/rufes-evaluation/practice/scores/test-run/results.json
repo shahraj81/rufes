@@ -1,0 +1,11 @@
+{
+    "scores": [
+        {
+            "ErrorStats": "TODO",
+            "Errors": 0,
+            "FatalError": "TODO",
+            "RunID": "test-run",
+            "Total": 0.1234
+        }
+    ]
+}
