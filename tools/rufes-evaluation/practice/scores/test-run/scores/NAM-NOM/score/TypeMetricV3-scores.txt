@@ -1,0 +1,28 @@
+DocID                                          RunID    GoldEntityID        SystemEntityID              AveragePrecision
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run Addario             Addario                               1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run Bush admin          Bush admin                            1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run CRS                 CRS                                   0.5000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run Congress            Congress                              1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run Democrats           Democrats                             0.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run Ferrier             Ferrier                               1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run House               House                                 0.6000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run Lib of Cong         Lib of Cong                           1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run None                GOP                                   0.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run None                Senate Finance Cmte                   0.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run None                high-income taxpayers                 0.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run None                republicans blasting report           0.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run Senate              None                                  0.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run Senate Finance Cmte None                                  0.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run Thomas Hungerford   Thomas Hungerford                     0.5000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run bill                bill                                  1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run orig report         orig report                           1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run other people        None                                  0.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run political parties   political parties                     1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run report general      report general                        1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run republicans         republicans                           0.1667
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run rev report          rev report                            1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run section             None                                  0.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run senate              senate                                1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run some people         some people                           1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run the rich            the rich                              1.0000
+Summary                                        test-run                                                           0.5679

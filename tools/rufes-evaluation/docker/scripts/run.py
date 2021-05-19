@@ -12,6 +12,7 @@ from logger import Logger
 import argparse
 import json
 import os
+import re
 import sys
 
 ALLOK_EXIT_CODE = 0
@@ -107,7 +108,7 @@ def main(args):
             num_others += 1
         if os.path.isfile(os.path.join(args.input, item)):
             if item.endswith('.tab'):
-                filename = item
+                filename = re.match(r"^(.*?)\.tab$", item).group(1)
             else:
                 num_others += 1
             num_files += 1
@@ -131,16 +132,17 @@ def main(args):
     record_and_display_message(logger, 'Copying system response file into appropriate location.')
     destination = '{output}/system_output'.format(output=args.output)
     call_system('mkdir {destination}'.format(destination=destination))
-    call_system('cp -r {input}/{filename} {destination}'.format(input=args.input, filename=filename, destination=destination))
+    call_system('cp -r {input}/{filename}.tab {destination}'.format(input=args.input, filename=filename, destination=destination))
 
     #############################################################################################
     # Copy gold annotations file into appropriate location
     #############################################################################################
 
+    gold_filename =  re.match(r"^(.*?)\.tab$", args.gold).group(1)
     record_and_display_message(logger, 'Copying gold annotations file into appropriate location.')
     destination = '{output}/gold'.format(output=args.output)
     call_system('mkdir {destination}'.format(destination=destination))
-    call_system('cp -r {data}/{gold_filename} {destination}'.format(data=args.data, gold_filename=args.gold, destination=destination))
+    call_system('cp -r {data}/{gold_filename}.tab {destination}'.format(data=args.data, gold_filename=gold_filename, destination=destination))
 
     #############################################################################################
     # Generate filtered data
@@ -149,15 +151,21 @@ def main(args):
     record_and_display_message(logger, 'Generating filtered data.')
     destination = '{output}/scores'.format(output=args.output)
     call_system('mkdir {destination}'.format(destination=destination))
-    for filter_name in ['ALL', 'NAM', 'NOM', 'PER']:
+    for filter_name in ['ALL', 'NAM', 'NOM', 'PRO', 'NAM-NOM', 'NAM-PRO', 'NOM-PRO']:
         destination = '{output}/scores/{filter_name}'.format(output=args.output, filter_name=filter_name)
         call_system('mkdir {destination}'.format(destination=destination))
-        call_system('python filter.py {filter_name} {output}/system_output/{filename} {output}/scores/{filter_name}/{filename}'.format(filter_name=filter_name,
-                                                                                                                                       output=args.output,
-                                                                                                                                       filename=filename))
-        call_system('python filter.py {filter_name} {output}/gold/{gold_filename} {output}/scores/{filter_name}/{gold_filename}'.format(filter_name=filter_name,
-                                                                                                                                        output=args.output,
-                                                                                                                                        gold_filename=args.gold))
+        call_system('python filter.py {filter_name} {output}/system_output/{filename}.tab {output}/scores/{filter_name}/{filename}.tab'.format(filter_name=filter_name,
+                                                                                                                                               output=args.output,
+                                                                                                                                               filename=filename))
+        call_system('python filter.py {filter_name} {output}/gold/{gold_filename}.tab {output}/scores/{filter_name}/{gold_filename}.tab'.format(filter_name=filter_name,
+                                                                                                                                                output=args.output,
+                                                                                                                                                gold_filename=gold_filename))
+        call_system('cat {output}/scores/{filter_name}/{filename}.tab | perl genTSV.pl > {output}/scores/{filter_name}/{filename}.tsv'.format(filter_name=filter_name,
+                                                                                                                                              output=args.output,
+                                                                                                                                              filename=filename))
+        call_system('cat {output}/scores/{filter_name}/{gold_filename}.tab | perl genTSV.pl > {output}/scores/{filter_name}/{gold_filename}.tsv'.format(filter_name=filter_name,
+                                                                                                                                                        output=args.output,
+                                                                                                                                                        gold_filename=gold_filename))
 
     #############################################################################################
     # Score filtered data directories 
@@ -166,10 +174,14 @@ def main(args):
     record_and_display_message(logger, 'Scoring filtered data.')
     destination = '{output}/scores'.format(output=args.output)
     call_system('mkdir {destination}'.format(destination=destination))
-    for filter_name in ['ALL', 'NAM', 'NOM', 'PER']:
+    for filter_name in ['ALL', 'NAM', 'NOM', 'PRO', 'NAM-NOM', 'NAM-PRO', 'NOM-PRO']:
         destination = '{output}/scores/{filter_name}'.format(output=args.output, filter_name=filter_name)
-        score_command = 'python score_submission.py -l {logs_directory}/{filter_name}.log -r {runid} ./log_specifications.txt {destination}/{gold_filename} {destination}/{filename} {destination}/score'
-        call_system(score_command.format(logs_directory=logs_directory, filter_name=filter_name, runid=args.run, destination=destination, gold_filename=args.gold, filename=filename))
+        score_command = 'python score_submission.py -l {logs_directory}/{filter_name}.log -r {runid} ./log_specifications.txt {destination}/{gold_filename}.tab {destination}/{filename}.tab {destination}/score'
+        call_system(score_command.format(logs_directory=logs_directory, filter_name=filter_name, runid=args.run, destination=destination, gold_filename=gold_filename, filename=filename))
+
+        score_command = "neleval evaluate -m strong_mention_match -m strong_typed_mention_match -m mention_ceaf  -m typed_mention_ceaf -m entity_ceaf -m b_cubed -m muc -m pairwise -f 'tab' "
+        score_command += "-g {destination}/{gold_filename}.tsv {destination}/{filename}.tsv > {destination}/score/{filename}.evaluation"
+        call_system(score_command.format(destination=destination, gold_filename=gold_filename, filename=filename))
     generate_results_file_and_exit(logger, logs_directory)
 
 if __name__ == '__main__':

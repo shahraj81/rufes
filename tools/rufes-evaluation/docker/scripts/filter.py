@@ -28,14 +28,18 @@ def check_for_paths_non_existance(paths):
 def filter_lines(filter_name, input_file, output_file):
     def check(line, filter_name):
         elements = line.split('\t')
+        criteria = {
+            'NAM': ['NAM'],
+            'NOM': ['NOM'],
+            'PRO': ['PRO'],
+            'NAM-NOM': ['NAM', 'NOM'],
+            'NAM-PRO': ['NAM', 'PRO'],
+            'NOM-PRO': ['NOM', 'PRO']
+            }
         if filter_name == 'ALL':
             return True
-        if filter_name == 'NAM' and elements[6] == 'NAM':
+        if elements[6] in criteria[filter_name]:
             return True
-        if filter_name == 'NOM' and elements[6] == 'NOM':
-            return True
-        if filter_name == 'PER' and 'PER' in elements[5].split(';'):
-            return  True
         return False
     program_output = open(output_file, 'w')
     with open(input_file) as fh:
@@ -53,7 +57,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Script for filtering lines from system response, and gold annotation.")
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__, help='Print version number and exit')
-    parser.add_argument('filter', choices=['ALL', 'NAM', 'NOM', 'PER'], help='Specify the name of the filter to be applied')
+    parser.add_argument('filter', choices=['ALL', 'NAM', 'NOM', 'PRO', 'NAM-NOM', 'NAM-PRO', 'NOM-PRO'], help='Specify the name of the filter to be applied')
     parser.add_argument('input', type=str, help='Specify the input file')
     parser.add_argument('output', type=str, help='Specify the output file')
     args = parser.parse_args()
