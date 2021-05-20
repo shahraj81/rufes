@@ -36,7 +36,7 @@ def filter_lines(filter_name, input_file, output_file):
             'NAM-PRO': ['NAM', 'PRO'],
             'NOM-PRO': ['NOM', 'PRO']
             }
-        if filter_name == 'ALL':
+        if filter_name == 'complete':
             return True
         if elements[6] in criteria[filter_name]:
             return True
@@ -57,7 +57,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Script for filtering lines from system response, and gold annotation.")
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__, help='Print version number and exit')
-    parser.add_argument('filter', choices=['ALL', 'NAM', 'NOM', 'PRO', 'NAM-NOM', 'NAM-PRO', 'NOM-PRO'], help='Specify the name of the filter to be applied')
+    parser.add_argument('filter', choices=['complete', 'NAM', 'NOM', 'PRO', 'NAM-NOM', 'NAM-PRO', 'NOM-PRO'], help='Specify the name of the filter to be applied')
     parser.add_argument('input', type=str, help='Specify the input file')
     parser.add_argument('output', type=str, help='Specify the output file')
     args = parser.parse_args()
