@@ -23,6 +23,8 @@ Follow the steps given below to build the docker image:
   make build
   ~~~
 
+[top](#how-to-run-the-rufes-evaluation-pipeline)
+
 # How to run the docker on a test run?
 
 An example run and corresponding scoring output has been placed respectively inside the directory named: `example/run/test-run` and `example/scores/test-run` .
@@ -34,6 +36,8 @@ make run-example
 ~~~
 
 Scoring output will be placed inside `example/scores/test-run`.
+
+[top](#how-to-run-the-rufes-evaluation-pipeline)
 
 # How to apply the docker on your run?
 
