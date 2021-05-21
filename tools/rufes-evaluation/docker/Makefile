@@ -1,8 +1,8 @@
 ROOT=/absolute/path/to/rufes/tools/rufes-evaluation
 RUNID=test-run
-HOST_INPUT_DIR=$(ROOT)/practice/runs/$(RUNID)
-HOST_OUTPUT_DIR=$(ROOT)/practice/scores/$(RUNID)
-HOST_DATA_DIR=$(ROOT)/practice/data
+HOST_INPUT_DIR=$(ROOT)/example/runs/$(RUNID)
+HOST_OUTPUT_DIR=$(ROOT)/example/scores/$(RUNID)
+HOST_DATA_DIR=$(ROOT)/example/data
 
 all:
 	@echo "Usage: make [build|run]"	
@@ -19,7 +19,7 @@ build:
 
 rebuild: clean build
 
-run-practice: run-evaluation-pipeline
+run-example: run-evaluation-pipeline
 
 run-evaluation-pipeline:
 	docker run \
