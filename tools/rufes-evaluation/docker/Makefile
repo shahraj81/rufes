@@ -1,5 +1,6 @@
 ROOT=/absolute/path/to/rufes/tools/rufes-evaluation
 RUNID=test-run
+GOLD=gold.tab
 HOST_INPUT_DIR=$(ROOT)/example/runs/$(RUNID)
 HOST_OUTPUT_DIR=$(ROOT)/example/scores/$(RUNID)
 HOST_DATA_DIR=$(ROOT)/example/data
@@ -24,6 +25,7 @@ run-example: run-evaluation-pipeline
 run-evaluation-pipeline:
 	docker run \
 	  --env RUNID=$(RUNID) \
+	  --env GOLD=$(GOLD) \
 	  -v $(HOST_INPUT_DIR):/evaluate:ro \
 	  -v $(HOST_OUTPUT_DIR):/score \
 	  -v $(HOST_DATA_DIR):/data \
