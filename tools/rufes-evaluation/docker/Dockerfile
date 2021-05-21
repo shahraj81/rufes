@@ -22,10 +22,11 @@ RUN python3.9 -m pip install --upgrade pip
 RUN pip3.9 install munkres
 
 #-------------------------------------------------------------
-# Install neleval
+# Install neleval and scipy
 #-------------------------------------------------------------
 
 RUN pip install neleval
+RUN pip install scipy
 
 # Setup the AIDA repository
 WORKDIR /scripts

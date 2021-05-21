@@ -1,2 +1,2 @@
 all:
-	python run.py --run $(RUNID)
+	python run.py --run $(RUNID) --gold $(GOLD)

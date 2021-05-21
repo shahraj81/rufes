@@ -10,6 +10,7 @@ __date__    = "18 May 2021"
 from logger import Logger
 
 import argparse
+import datetime
 import json
 import os
 import re
@@ -20,7 +21,8 @@ ERROR_EXIT_CODE = 255
 
 def call_system(cmd):
     cmd = ' '.join(cmd.split())
-    print("running system command: '{}'".format(cmd))
+
+    print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ": running system command: '{}'".format(cmd))
     os.system(cmd)
 
 def record_and_display_message(logger, message):
@@ -140,8 +142,7 @@ def main(args):
     # Copy gold annotations file into appropriate location
     #############################################################################################
 
-    gold_destination = '{output}/gold'.format(output=args.output)
-    call_system('mkdir {gold_destination}'.format(gold_destination=gold_destination))
+    gold_destination = '/gold'.format(output=args.output)
     gold_filename =  re.match(r"^(.*?)\.tab$", args.gold).group(1)
     record_and_display_message(logger, 'Copying gold annotations file into appropriate location.')
     destination = '{gold_destination}'.format(gold_destination=gold_destination)
@@ -183,10 +184,9 @@ def main(args):
     #############################################################################################
 
     record_and_display_message(logger, 'Scoring filtered data.')
-    destination = '{output}'.format(output=args.output)
-    call_system('mkdir {destination}'.format(destination=destination))
     for filter_name in choices:
         destination = '{output}/{filter_name}'.format(output=args.output, filter_name=filter_name)
+        filter_gold_destination = '{gold_destination}/{filter_name}'.format(gold_destination=gold_destination, filter_name=filter_name)
         score_command = 'python score_submission.py -l {logs_directory}/{filter_name}.log -r {runid} ./log_specifications.txt {filter_gold_destination}/{gold_filename}.tab {destination}/{filename}.tab {destination}/typing'
         call_system(score_command.format(logs_directory=logs_directory, filter_name=filter_name, runid=args.run, filter_gold_destination=filter_gold_destination, gold_filename=gold_filename, destination=destination, filename=filename))
 
