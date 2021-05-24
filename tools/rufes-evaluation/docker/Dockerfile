@@ -34,7 +34,7 @@ WORKDIR /scripts
 RUN git clone https://github.com/shahraj81/rufes.git
 
 # Setup the scripts directory
-COPY ./scripts/* .
+COPY ./scripts/* ./
 RUN cp /scripts/rufes/tools/scorer/score_submission.py /scripts/
 RUN cp /scripts/rufes/input/log_specifications.txt /scripts/
 
