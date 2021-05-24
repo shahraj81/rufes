@@ -7,7 +7,7 @@ __status__  = "production"
 __version__ = "0.0.0.1"
 __date__    = "18 May 2021"
 
-from .logger import Logger
+from logger import Logger
 
 import argparse
 import datetime
