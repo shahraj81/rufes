@@ -19,11 +19,27 @@ import sys
 ALLOK_EXIT_CODE = 0
 ERROR_EXIT_CODE = 255
 
+choices = ['complete', 'NAM', 'NOM', 'PRO', 'NAM-NOM', 'NAM-PRO', 'NOM-PRO']
+
+
 def call_system(cmd):
     cmd = ' '.join(cmd.split())
-
     print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ": running system command: '{}'".format(cmd))
     os.system(cmd)
+
+def get_problems(logs_directory):
+    num_errors = 0
+    stats = {}
+    for filename in os.listdir(logs_directory):
+        filepath = '{}/{}'.format(logs_directory, filename)
+        fh = open(filepath)
+        for line in fh.readlines():
+            if 'ERROR' in line:
+                num_errors += 1
+                error_type = line.split('-')[3].strip()
+                stats[error_type] = stats.get(error_type, 0) + 1
+        fh.close()
+    return num_errors, stats
 
 def record_and_display_message(logger, message):
     print("----------------------------------------------------------")
@@ -32,17 +48,58 @@ def record_and_display_message(logger, message):
     logger.record_event('DEFAULT_INFO', message)
 
 def generate_results_file_and_exit(logger, logs_directory):
-    # current implementation of this function serves as a placeholder
+    exit_code = ALLOK_EXIT_CODE
     scores = {}
+    for dir_name in choices:
+        typing = []
+        expected = 3
+        for filename in os.listdir(os.path.join(args.output, dir_name, 'typing')):
+            if filename.endswith('-scores.txt'):
+                typing.append(os.path.join(args.output, dir_name, 'typing', filename))
+                expected -= 1
+        if expected != 0:
+            exit_code = ERROR_EXIT_CODE
 
-    # TODO: obtain error stats and number of errors
-    num_errors = 0
+        for filename in typing:
+            metric_name = filename.split('/')[-1].split('-')[0]
+            with open(filename) as fh:
+                last_line = None
+                for line in fh.readlines():
+                    line = line.strip()
+                    last_line = line
+                if last_line.startswith('Summary'):
+                    scores['{prefix}:{metric_name}'.format(prefix=filename.split('/')[2], metric_name=metric_name)] = float(last_line.split()[-1])
+                else:
+                    exit_code = ERROR_EXIT_CODE
 
+        found = False
+        for filename in os.listdir(os.path.join(args.output, dir_name)):
+            if os.path.isfile(os.path.join(args.output, dir_name, filename)):
+                if filename.endswith('.evaluation'):
+                    with open(os.path.join(args.output, dir_name, filename)) as fh:
+                        header = None
+                        for line in fh.readlines():
+                            line = line.strip()
+                            if header is None:
+                                header = line.split()
+                            else:
+                                entry = dict(zip(header, line.split()))
+                                metric_names = [k for k in entry.keys() if k != 'measure']
+                                for name in metric_names:
+                                    metric_name = '{prefix}:{measure}:{name}'.format(prefix=dir_name, measure=entry['measure'], name=name)
+                                    scores[metric_name] = float(entry[name])
+                                    found = True
+
+        if not found:
+            exit_code = ERROR_EXIT_CODE
+
+    num_problems, problem_stats = get_problems(logs_directory)
+    fatal_error = 'Yes' if exit_code == ERROR_EXIT_CODE else 'No'
     scores['RunID'] = args.run
-    scores['Total'] = 0.1234
-    scores['Errors'] = num_errors
-    scores['ErrorStats'] = 'TODO'
-    scores['FatalError'] = 'TODO'
+    scores['Errors'] = num_problems
+    scores['ErrorStats'] = problem_stats
+    scores['FatalError'] = fatal_error
+    scores['Total'] = scores['complete:mention_ceaf:fscore']
 
     output = {'scores' : [
                             scores
@@ -57,7 +114,7 @@ def generate_results_file_and_exit(logger, logs_directory):
 
 
     exit_code = ALLOK_EXIT_CODE
-    if num_errors:
+    if num_problems:
         exit_code = ERROR_EXIT_CODE
     
     if exit_code == ERROR_EXIT_CODE:
@@ -67,7 +124,6 @@ def generate_results_file_and_exit(logger, logs_directory):
     exit(exit_code)
 
 def main(args):
-    choices = ['complete', 'NAM', 'NOM', 'PRO', 'NAM-NOM', 'NAM-PRO', 'NOM-PRO']
 
     #############################################################################################
     # check input/output directory for existence
@@ -161,7 +217,6 @@ def main(args):
 
     record_and_display_message(logger, 'Generating filtered data.')
     destination = '{output}'.format(output=args.output)
-    call_system('mkdir {destination}'.format(destination=destination))
     for filter_name in choices:
 
         filter_destination = '{output}/{filter_name}'.format(output=args.output, filter_name=filter_name)
