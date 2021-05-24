@@ -15,8 +15,6 @@ clean:
 
 build:
 	docker build \
-	  --build-arg version=$(GRAPHDB_VERSION) \
-	  --build-arg edition=$(GRAPHDB_EDITION) \
 	-t rufes-evaluation .
 
 rebuild: clean build
