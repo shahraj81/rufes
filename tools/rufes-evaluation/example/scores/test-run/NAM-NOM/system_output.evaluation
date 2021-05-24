@@ -1,9 +1,9 @@
 ptp	fp	rtp	fn	precis	recall	fscore	measure
-19.841	35.159	18.333	23.667	0.361	0.437	0.395	b_cubed
-8.060	13.940	8.060	4.940	0.366	0.620	0.461	entity_ceaf
-22.000	33.000	22.000	20.000	0.400	0.524	0.454	mention_ceaf
-13	20	13	16	0.394	0.448	0.419	muc
-37	77	37	67	0.325	0.356	0.339	pairwise
-25	30	25	17	0.455	0.595	0.515	strong_mention_match
-25	30	25	17	0.455	0.595	0.515	strong_typed_mention_match
-22.000	33.000	22.000	20.000	0.400	0.524	0.454	typed_mention_ceaf
+47.683	7.317	40.567	19.433	0.867	0.676	0.760	b_cubed
+16.642	5.358	16.642	5.358	0.756	0.756	0.756	entity_ceaf
+46	9	46	14	0.836	0.767	0.800	mention_ceaf
+29	4	29	9	0.879	0.763	0.817	muc
+94	20	94	65	0.825	0.591	0.689	pairwise
+51	4	51	9	0.927	0.850	0.887	strong_mention_match
+43	12	43	17	0.782	0.717	0.748	strong_typed_mention_match
+40	15	40	20	0.727	0.667	0.696	typed_mention_ceaf
