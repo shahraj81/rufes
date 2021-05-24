@@ -7,7 +7,7 @@ __status__  = "production"
 __version__ = "0.0.0.1"
 __date__    = "18 May 2021"
 
-from logger import Logger
+from .logger import Logger
 
 import argparse
 import datetime
@@ -136,7 +136,10 @@ def main(args):
     record_and_display_message(logger, 'Copying system response file into appropriate location.')
     destination = '{output}/run-out'.format(output=args.output)
     call_system('mkdir {destination}'.format(destination=destination))
-    call_system('cp -r {input}/{filename}.tab {destination}'.format(input=args.input, filename=filename, destination=destination))
+    call_system('cp -r {input}/{filename}.tab {destination}{filename}-raw.tab'.format(input=args.input, filename=filename, destination=destination))
+
+    # apply coredocs filter
+    call_system('grep -f {data}/{coredocs} {destination}{filename}-raw.tab > {destination}{filename}.tab'.format(data=args.data, coredocs=args.coredocs, destination=destination, filename=filename))
 
     #############################################################################################
     # Copy gold annotations file into appropriate location
@@ -147,7 +150,10 @@ def main(args):
     record_and_display_message(logger, 'Copying gold annotations file into appropriate location.')
     destination = '{gold_destination}'.format(gold_destination=gold_destination)
     call_system('mkdir {destination}'.format(destination=destination))
-    call_system('cp -r {data}/{gold_filename}.tab {destination}'.format(data=args.data, gold_filename=gold_filename, destination=destination))
+    call_system('cp -r {data}/{gold_filename}.tab {destination}/{gold_filename}-raw.tab'.format(data=args.data, gold_filename=gold_filename, destination=destination))
+
+    # apply coredocs filter
+    call_system('grep -f {data}/{coredocs} {destination}/{gold_filename}-raw.tab > {destination}/{gold_filename}.tab'.format(data=args.data, coredocs=args.coredocs, gold_filename=gold_filename, destination=destination))
 
     #############################################################################################
     # Generate filtered data
@@ -197,8 +203,9 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Run the RUFES evaluation pipeline.")
+    parser.add_argument('-c', '--coredocs', default='coredocs.txt', help='Specify the name of the coredocs file placed inside the data directory (default: %(default)s)')
     parser.add_argument('-d', '--data', default='/data', help='Specify the data directory (default: %(default)s)')
-    parser.add_argument('-g', '--gold', default='gold.tab', help='Specify the name of the gold annotation data file (default: %(default)s)')
+    parser.add_argument('-g', '--gold', default='gold.tab', help='Specify the name of the gold annotation data file placed inside the data directory (default: %(default)s)')
     parser.add_argument('-i', '--input', default='/evaluate', help='Specify the input directory (default: %(default)s)')
     parser.add_argument('-l', '--logs', default='logs', help='Specify the name of the logs directory to which different log files should be written (default: %(default)s)')
     parser.add_argument('-o', '--output', default='/score', help='Specify the input directory (default: %(default)s)')
