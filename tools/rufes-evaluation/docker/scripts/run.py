@@ -136,10 +136,10 @@ def main(args):
     record_and_display_message(logger, 'Copying system response file into appropriate location.')
     destination = '{output}/run-out'.format(output=args.output)
     call_system('mkdir {destination}'.format(destination=destination))
-    call_system('cp -r {input}/{filename}.tab {destination}{filename}-raw.tab'.format(input=args.input, filename=filename, destination=destination))
+    call_system('cp -r {input}/{filename}.tab {destination}/{filename}-raw.tab'.format(input=args.input, filename=filename, destination=destination))
 
     # apply coredocs filter
-    call_system('grep -f {data}/{coredocs} {destination}{filename}-raw.tab > {destination}{filename}.tab'.format(data=args.data, coredocs=args.coredocs, destination=destination, filename=filename))
+    call_system('grep -f {data}/{coredocs} {destination}/{filename}-raw.tab > {destination}/{filename}.tab'.format(data=args.data, coredocs=args.coredocs, destination=destination, filename=filename))
 
     #############################################################################################
     # Copy gold annotations file into appropriate location
