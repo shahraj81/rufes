@@ -22,6 +22,10 @@ Follow the steps given below to build the docker image:
   ~~~
   make build
   ~~~
+  Alternatively, you may run the following command:
+  ~~~
+  docker build -t rufes-evaluation .
+  ~~~
 
 [top](#how-to-run-the-rufes-evaluation-pipeline)
 
@@ -33,6 +37,22 @@ In order to run the docker on the `test-run`, you may run the following command:
 
 ~~~
 make run-example
+~~~
+
+Alternatively, you may run the following command:
+
+~~~
+run-evaluation-pipeline:
+	docker run \
+	  --env RUNID=test-run \
+	  --env GOLD=gold.tab \
+	  --env COREDOCS=coredocs.txt \
+	  -v /absolute/path/to/rufes/tools/rufes-evaluation/example/runs/test-run:/evaluate:ro \
+	  -v /absolute/path/to/rufes/tools/rufes-evaluation/example/data:/data \
+	  -v /absolute/path/to/rufes/tools/rufes-evaluation/example/scores/test-run:/score \
+	-it rufes-evaluation
+
+* Note: modify the `/absolute/path/to` in the above command to reflect location of the rufes repository on your system.
 ~~~
 
 Scoring output will be placed inside `example/scores/test-run`.
@@ -47,12 +67,26 @@ In order to run the docker on your run, you may run the following command:
 make run-evaluation-pipeline \
   RUNID=your_run_id \
   GOLD=gold_filename \
-  HOST_INPUT_DIR=/absolute/path/to/your/run \
-  HOST_DATA_DIR=/absolute/path/to/data/dir \
-  HOST_OUTPUT_DIR=/absolute/path/to/output
+  COREDOCS=coredocs_filename \
+  HOST_INPUT_DIR=/absolute/path/to/your/run/directory \
+  HOST_DATA_DIR=/absolute/path/to/data/directory \
+  HOST_OUTPUT_DIR=/absolute/path/to/output/directory
 ~~~
 
 Note, that you would need to make sure that the `gold_filename` is present inside the `HOST_DATA_DIR`.
+
+Alternatively, you may run the following command:
+
+~~~
+docker run \
+  --env RUNID=your_run_id \
+  --env GOLD=gold_filename \
+  --env COREDOCS=coredocs_filename \
+  -v /absolute/path/to/your/run/directory:/evaluate:ro \
+  -v /absolute/path/to/data/directory:/data \
+  -v /absolute/path/to/output/directory:/score \
+-it rufes-evaluation
+~~~
 
 [top](#how-to-run-the-rufes-evaluation-pipeline)
 
@@ -60,5 +94,9 @@ Note, that you would need to make sure that the `gold_filename` is present insid
 
 ## 05/21/2021:
 * Initial version.
+
+## 05/27/2021:
+* Coredocs filtering added.
+* Alternative ways to build and run docker added.
 
 [top](#how-to-run-the-rufes-evaluation-pipeline)
