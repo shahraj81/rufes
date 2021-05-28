@@ -99,7 +99,7 @@ def generate_results_file_and_exit(logger, logs_directory):
     scores['Errors'] = num_problems
     scores['ErrorStats'] = problem_stats
     scores['FatalError'] = fatal_error
-    scores['Total'] = scores['complete:mention_ceaf:fscore']
+    scores['Total'] = scores['complete:TypeMetricV1']
 
     output = {'scores' : [
                             scores
