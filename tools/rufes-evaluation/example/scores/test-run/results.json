@@ -359,7 +359,7 @@
             "PRO:typed_mention_ceaf:recall": 0.583,
             "PRO:typed_mention_ceaf:rtp": 7.0,
             "RunID": "test-run",
-            "Total": 0.8,
+            "Total": 0.6169,
             "complete:TypeMetricV1": 0.6169,
             "complete:TypeMetricV2": 0.6064,
             "complete:TypeMetricV3": 0.6064,
