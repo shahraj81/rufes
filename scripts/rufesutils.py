@@ -89,7 +89,7 @@ class GenerateSentenceBoundaries(Object):
         fields = ['document_id', 'segment_id', 'start_char', 'end_char', 'start_segment_offset', 'end_segment_offset']
         header = tostring(fields)
         lines = [header]
-        for document_id in sentence_boundaries:
+        for document_id in sorted(sentence_boundaries):
             for segment_id in sorted(sentence_boundaries.get(document_id), key=order):
                 start_char, end_char, start_segment_offset, end_segment_offset = [sentence_boundaries.get(document_id).get(segment_id).get(fn) for fn in ['START_CHAR', 'END_CHAR', 'START_SEGMENT_OFFSET', 'END_SEGMENT_OFFSET']]
                 entry = {'document_id': document_id,
