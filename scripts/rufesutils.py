@@ -14,8 +14,7 @@ import sys
 import textwrap
 import traceback
 
-from rufeslib import Logger
-from rufeslib import Object
+from rufeslib import FileHandler, FileHeader, RUFESObject, TextBoundaries, Normalizer, Validator
 from tqdm import tqdm
 
 ALLOK_EXIT_CODE = 0
@@ -36,15 +35,13 @@ def check_paths(exist=[], donot_exist=[]):
     check_for_paths_existance(exist)
     check_for_paths_non_existance(donot_exist)
 
-class GenerateSentenceBoundaries(Object):
+class GenerateSegmentBoundaries(RUFESObject):
     """
-    Class for generating sentence boundaries.
+    Class for generating segment boundaries.
     """
     def __init__(self, **kwargs):
-        for k,v in kwargs.items():
-            self.set(k, v)
-        check_paths(exist=[self.get('ltf')], donot_exist=[self.get('output')])
-        self.logger = Logger(self.get('logfile'), self.get('logspecs'), sys.argv)
+        check_paths(exist=[kwargs.get('logspecs'), kwargs.get('ltf')], donot_exist=[kwargs.get('output')])
+        super().__init__(**kwargs)
 
     def __call__(self):
         def order(segment_id):
@@ -61,13 +58,14 @@ class GenerateSentenceBoundaries(Object):
                 values.append(value)
             return '\t'.join(values)
         ltfdir = self.get('ltf')
-        sentence_boundaries = {}
+        segment_boundaries = {}
         items = os.listdir(ltfdir)
         filenames = [i for i in items if i.endswith('.ltf.xml')]
-        for document_id in tqdm(filenames):
+        for filename in tqdm(filenames):
+            document_id = filename.replace('.ltf.xml', '')
             filepath = os.path.join(ltfdir, document_id)
             if os.path.isfile(filepath):
-                sentence_boundaries[document_id] = {}
+                segment_boundaries[document_id] = {}
                 with open(filepath) as fh:
                     running_offset, start_segment_offset, end_segment_offset, segment_id, start_char, end_char = [0,0,0,0,0,0]
                     for line in fh.readlines():
@@ -79,7 +77,7 @@ class GenerateSentenceBoundaries(Object):
                             end_char, segment_id, start_char = [m.group(i) for i in [1, 2, 3]];
                         if re.match('^<\/SEG>$', line):
                             end_segment_offset = running_offset + length - 1;
-                            sentence_boundaries[document_id][segment_id] = {
+                            segment_boundaries[document_id][segment_id] = {
                                     'START_CHAR': start_char,
                                     'END_CHAR': end_char,
                                     'START_SEGMENT_OFFSET': start_segment_offset,
@@ -89,9 +87,9 @@ class GenerateSentenceBoundaries(Object):
         fields = ['document_id', 'segment_id', 'start_char', 'end_char', 'start_segment_offset', 'end_segment_offset']
         header = tostring(fields)
         lines = [header]
-        for document_id in sorted(sentence_boundaries):
-            for segment_id in sorted(sentence_boundaries.get(document_id), key=order):
-                start_char, end_char, start_segment_offset, end_segment_offset = [sentence_boundaries.get(document_id).get(segment_id).get(fn) for fn in ['START_CHAR', 'END_CHAR', 'START_SEGMENT_OFFSET', 'END_SEGMENT_OFFSET']]
+        for document_id in sorted(segment_boundaries):
+            for segment_id in sorted(segment_boundaries.get(document_id), key=order):
+                start_char, end_char, start_segment_offset, end_segment_offset = [segment_boundaries.get(document_id).get(segment_id).get(fn) for fn in ['START_CHAR', 'END_CHAR', 'START_SEGMENT_OFFSET', 'END_SEGMENT_OFFSET']]
                 entry = {'document_id': document_id,
                          'segment_id': segment_id,
                          'start_char': start_char,
@@ -113,8 +111,104 @@ class GenerateSentenceBoundaries(Object):
         parser.set_defaults(myclass=myclass)
         return parser
 
+class ValidateResponses(RUFESObject):
+    """
+    Class for validating responses.
+    """
+
+    schemas = {
+        'TAC2020': {
+            'columns': ['run_id', 'mention_id', 'mention_string', 'mention_span', 'entity_id', 'entity_types', 'mention_type', 'confidence'],
+            }
+        }
+
+    attributes = {
+        'confidence': {
+            'name': 'confidence',
+            'validate': 'validate_confidence'
+            },
+        'entity_id': {
+            'name': 'entity_id',
+            },
+        'entity_types': {
+            'name': 'entity_types',
+            'validate': 'validate_entity_types',
+            },
+        'mention_id': {
+            'name': 'mention_id',
+            },
+        'mention_span': {
+            'name': 'mention_span',
+            'normalize': 'normalize_mention_span',
+            'validate': 'validate_mention_span',
+            },
+        'mention_string': {
+            'name': 'mention_string',
+            },
+        'mention_type': {
+            'name': 'mention_type',
+            'validate': 'validate_mention_type',
+            },
+        'run_id': {
+            'name': 'run_id',
+            'validate': 'validate_run_id',
+            },
+        }
+
+    def __init__(self, **kwargs):
+        check_paths(exist=[kwargs.get('logspecs'), kwargs.get('segment_boundaries'), kwargs.get('input')], donot_exist=[kwargs.get('output')])
+        super().__init__(**kwargs)
+        self.normalizer = Normalizer(self.get('logger'))
+        self.validator = Validator(self.get('logger'))
+
+    def __call__(self):
+        def validate(self, schema, entry, columns, data):
+            for column_name in columns:
+                column_spec = self.attributes[column_name]
+                normalizer_name = column_spec.get('normalize')
+                if normalizer_name:
+                    self.get('normalizer').normalize(self, normalizer_name, entry, self.attributes[column_name])
+                validator_name = column_spec.get('validate')
+                if validator_name:
+                    self.get('validator').validate(self, validator_name, schema, entry, self.attributes[column_name], data)
+        logger = self.get('logger')
+        allowed_entity_types = [e.get('type') for e in FileHandler(logger, self.get('ontology_types'), header=FileHeader(logger, 'type'))]
+        segment_boundaries = TextBoundaries(logger, self.get('segment_boundaries'))
+        allowed_mention_types = ['NAM', 'NOM', 'PRO']
+        data = {'segment_boundaries': segment_boundaries,
+                'allowed_entity_types': allowed_entity_types,
+                'allowed_mention_types': allowed_mention_types}
+        schema = self.get('schema')
+        columns = schema.get('columns')
+        header = FileHeader(logger, '\t'.join(columns))
+        entries = FileHandler(logger, self.get('input'), header=header, encoding='utf-8')
+        with open(self.get('output'), 'w') as program_output:
+            for entry in entries:
+                valid = True
+                valid_attribute = validate(self, schema, entry, columns, data)
+                if not valid_attribute: valid = False
+                entry.set('valid', valid)
+                if valid:
+                    program_output.write(entry.__str__())
+
+    def get_schema(self):
+        return self.schemas.get('TAC2020')
+
+    @classmethod
+    def add_arguments(myclass, parser):
+        parser.add_argument('-l', '--logfile', default='log.txt', help='Specify a file to which log output should be redirected (default: %(default)s)')
+        parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__, help='Print version number and exit')
+        parser.add_argument('logspecs', type=str, help='File containing error specifications')
+        parser.add_argument('segment_boundaries', type=str, help='File containing segment boundaries information.')
+        parser.add_argument('ontology_types', type=str, help='File containing list of valid ontology types.')
+        parser.add_argument('input', type=str, help='File to be validated.')
+        parser.add_argument('output', type=str, help='Specify the file to which the validated output should be written')
+        parser.set_defaults(myclass=myclass)
+        return parser
+
 myclasses = [
-    GenerateSentenceBoundaries,
+    GenerateSegmentBoundaries,
+    ValidateResponses,
     ]
 
 def main(args=sys.argv[1:]):
