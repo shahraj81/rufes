@@ -194,6 +194,7 @@ class ValidateResponses(RUFESObject):
                 entry.set('valid', valid)
                 if valid:
                     program_output.write(entry.__str__())
+        self.record_event('DEFAULT_INFO', 'Execution ends')
 
     def get_schema(self):
         return self.schemas.get('TAC2020')
