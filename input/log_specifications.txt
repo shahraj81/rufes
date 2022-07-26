@@ -1,10 +1,15 @@
 type      code                            message
+INFO      ALIGNMENT_INFO                  DOCID: {} GOLD_ENTITY:{} SYSTEM_ENTITY:{} SIMILARITY:{}
+INFO      AP_INFO                         METRIC: {} RANK: {} TYPE: {} LABEL: {} WEIGHT: {} NUM_CORRECT: {} SUM_PRECISION: {}
 ERROR     DEFAULT_ERROR                   Error encountered {} {}
 WARNING   DEFAULT_WARNING                 Warning: {}
 DEBUG     DEFAULT_DEBUG                   {}
 INFO      DEFAULT_INFO                    {}
-INFO      ALIGNMENT_INFO                  DOCID: {} GOLD_ENTITY:{} SYSTEM_ENTITY:{} SIMILARITY:{}
 INFO      ENTITY_TYPES_INFO               {} DOCID: {} ENTITY:{} TYPES: {} EXPANDED: {}
+ERROR     IMPROPER_OFFSET_ORDER           Improper offset order - start offset > end offset in {}
+WARNING   INVALID_CONFIDENCE              Invalid confidence value '{}' (using 1.0)
+ERROR     NEGATIVE_OFFSET                 Negative value of {} in {}
 INFO      SIMILARITY_INFO                 DOCID: {} GOLD: {} SYSTEM: {} SIMILARITY: {} COMMON_MENTIONS: {}
-INFO      AP_INFO                         METRIC: {} RANK: {} TYPE: {} LABEL: {} WEIGHT: {} NUM_CORRECT: {} SUM_PRECISION: {}
+ERROR     SPAN_OFF_BOUNDARY               Span '{}' is outside document boundary '{}'
+ERROR     UNKNOWN_DOCUMENT                Unknown document '{}'
 ERROR     UNKNOWN_VALUE                   Unknown {} '{}' (expected one from {{{}}})

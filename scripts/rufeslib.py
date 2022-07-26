@@ -410,7 +410,7 @@ class Entry(Object):
         return self.get('where').get('lineno')
 
     def __str__(self):
-        return '{}\n'.format('\t'.join([self.get(column) for column in self.get('schema').get('columns')]))
+        return '{}\n'.format('\t'.join([self.get(column) for column in self.get('header').get('columns')]))
 
 class FileHandler(Object):
     """
@@ -727,7 +727,7 @@ class Normalizer(Object):
     def normalize_mention_span(self, caller, entry, attribute):
         attribute_name = attribute.get('name')
         value = entry.get(attribute_name)
-        search_obj = re.search(r'^(.*?):(\d+)-(\d+)$', value)
+        search_obj = re.search(r'^(.*?):(-?[0-9]+)-(-?[0-9]+)$', value)
         if search_obj:
             document_id = search_obj.group(1)
             start_x = search_obj.group(2)
@@ -744,20 +744,16 @@ class Validator(Object):
         super().__init__(logger)
 
     def parse_provenance(self, provenance):
-        pattern = re.compile('^(\w+?):(\w+?):\((\S+),(\S+)\)-\((\S+),(\S+)\)$')
-        match = pattern.match(provenance)
-        if not match: return
-        document_id = match.group(1)
-        document_element_id = match.group(2)
-        start_x, start_y, end_x, end_y = map(lambda ID: match.group(ID), [3, 4, 5, 6])
-
-        # if provided, obtain keyframe_id and update document_element_id
-        pattern = re.compile('^(\w*?)_(\d+)$')
-        match = pattern.match(document_element_id)
-        keyframe_num = match.group(2) if match else None
-        document_element_id = match.group(1) if match else document_element_id
-
-        return document_id, document_element_id, keyframe_num, start_x, start_y, end_x, end_y
+        search_obj = re.search('^(.*?):\((\S+),(\S+)\)-\((\S+),(\S+)\)$', provenance)
+        if not search_obj: return
+        document_id = search_obj.group(1)
+        start_x, start_y, end_x, end_y = map(lambda ID: int(search_obj.group(ID)), [2, 3, 4, 5])
+        return {
+            'document_id': document_id,
+            'start_x':start_x,
+            'start_y':start_y,
+            'end_x':end_x,
+            'end_y':end_y}
 
     def validate(self, caller, method_name, schema, entry, attribute, data):
         method = self.get_method(method_name)
@@ -768,8 +764,8 @@ class Validator(Object):
     def validate_confidence(self, caller, schema, entry, attribute, data):
         confidence = entry.get(attribute.get('name'))
         if not 0 < float(confidence) <= 1.0:
-            self.record_event('INVALID_CONFIDENCE_VALUE', confidence, entry.get('where'))
-            return False
+            self.record_event('INVALID_CONFIDENCE', confidence, entry.get('where'))
+            entry.set(attribute.get('name'), '1.0')
         return True
 
     def validate_entity_types(self, caller, schema, entry, attribute, data):
@@ -781,11 +777,22 @@ class Validator(Object):
         def parse(span):
             return span.split(':')
         mention_span = entry.get(attribute.get('name'))
-        segment_boundary = data.get('segment_boundaries').get('boundary', mention_span)
-        if segment_boundary.validate(mention_span.split(':')[1]):
-            return True
-        self.record_event('SPAN_OFF_BOUNDARY', mention_span, segment_boundary, entry.get('where'))
-        return False
+        text_boundary = data.get('text_boundaries').get('boundary', mention_span)
+        parsed_provenance = self.parse_provenance(mention_span)
+        if not data.get('text_boundaries').exists(parsed_provenance.get('document_id')):
+            self.record_event('UNKNOWN_DOCUMENT', mention_span, parsed_provenance.get('document_id'), entry.get('where'))
+            return False
+        if parsed_provenance.get('start_x') > parsed_provenance.get('end_x'):
+            self.record_event('IMPROPER_OFFSET_ORDER', mention_span, entry.get('where'))
+            return False
+        for start_or_end_x in ['start_x', 'end_x']:
+            if parsed_provenance.get(start_or_end_x) < 0:
+                self.record_event('NEGATIVE_OFFSET', start_or_end_x, mention_span, entry.get('where'))
+                return False
+        if not text_boundary.validate(mention_span.split(':')[1]):
+            self.record_event('SPAN_OFF_BOUNDARY', mention_span, text_boundary, entry.get('where'))
+            return False
+        return True
 
     def validate_mention_type(self, caller, schema, entry, attribute, data):
         allowed_values = data['allowed_mention_types']

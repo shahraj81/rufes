@@ -163,6 +163,7 @@ class ValidateResponses(RUFESObject):
 
     def __call__(self):
         def validate(self, schema, entry, columns, data):
+            valid = True
             for column_name in columns:
                 column_spec = self.attributes[column_name]
                 normalizer_name = column_spec.get('normalize')
@@ -170,14 +171,17 @@ class ValidateResponses(RUFESObject):
                     self.get('normalizer').normalize(self, normalizer_name, entry, self.attributes[column_name])
                 validator_name = column_spec.get('validate')
                 if validator_name:
-                    self.get('validator').validate(self, validator_name, schema, entry, self.attributes[column_name], data)
+                    valid_attribute = self.get('validator').validate(self, validator_name, schema, entry, self.attributes[column_name], data)
+                if not valid_attribute:
+                    valid = False
+            return valid
         logger = self.get('logger')
         allowed_entity_types = [e.get('type') for e in FileHandler(logger, self.get('ontology_types'), header=FileHeader(logger, 'type'))]
-        segment_boundaries = TextBoundaries(logger, self.get('segment_boundaries'))
+        text_boundaries = TextBoundaries(logger, self.get('segment_boundaries'))
         allowed_mention_types = ['NAM', 'NOM', 'PRO']
-        data = {'segment_boundaries': segment_boundaries,
-                'allowed_entity_types': allowed_entity_types,
-                'allowed_mention_types': allowed_mention_types}
+        data = {'allowed_entity_types': allowed_entity_types,
+                'allowed_mention_types': allowed_mention_types,
+                'text_boundaries': text_boundaries}
         schema = self.get('schema')
         columns = schema.get('columns')
         header = FileHeader(logger, '\t'.join(columns))
