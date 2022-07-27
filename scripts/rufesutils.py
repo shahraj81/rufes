@@ -113,7 +113,7 @@ class GenerateSegmentBoundaries(RUFESObject):
 
 class ValidateResponses(RUFESObject):
     """
-    Class for validating responses.
+    Class used by the script for validating responses.
     """
 
     schemas = {
@@ -162,8 +162,11 @@ class ValidateResponses(RUFESObject):
         self.validator = Validator(self.get('logger'))
 
     def __call__(self):
+        # the entrypoint method
         def validate(self, schema, entry, columns, data):
+            # the method for validating an entry (i.e. a line in responses or gold file)
             valid = True
+            # normalize and validate all fields in the entry
             for column_name in columns:
                 column_spec = self.attributes[column_name]
                 normalizer_name = column_spec.get('normalize')
@@ -172,12 +175,17 @@ class ValidateResponses(RUFESObject):
                 validator_name = column_spec.get('validate')
                 if validator_name:
                     valid_attribute = self.get('validator').validate(self, validator_name, schema, entry, self.attributes[column_name], data)
+                if normalizer_name:
+                    self.get('normalizer').normalize(self, normalizer_name, entry, self.attributes[column_name], undo=True)
                 if not valid_attribute:
                     valid = False
             return valid
         logger = self.get('logger')
+        # load allowed entity types
         allowed_entity_types = [e.get('type') for e in FileHandler(logger, self.get('ontology_types'), header=FileHeader(logger, 'type'))]
+        # load text boundaries
         text_boundaries = TextBoundaries(logger, self.get('segment_boundaries'))
+        # initialize allowed mention types
         allowed_mention_types = ['NAM', 'NOM', 'PRO']
         data = {'allowed_entity_types': allowed_entity_types,
                 'allowed_mention_types': allowed_mention_types,
@@ -185,13 +193,16 @@ class ValidateResponses(RUFESObject):
         schema = self.get('schema')
         columns = schema.get('columns')
         header = FileHeader(logger, '\t'.join(columns))
+        # read input file
         entries = FileHandler(logger, self.get('input'), header=header, encoding='utf-8')
         with open(self.get('output'), 'w') as program_output:
+            # validate all entries
             for entry in entries:
                 valid = True
                 valid_attribute = validate(self, schema, entry, columns, data)
                 if not valid_attribute: valid = False
                 entry.set('valid', valid)
+                # write entry to output file if it is valid
                 if valid:
                     program_output.write(entry.__str__())
         self.record_event('DEFAULT_INFO', 'Execution ends')

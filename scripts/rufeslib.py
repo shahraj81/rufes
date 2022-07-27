@@ -720,30 +720,46 @@ class Normalizer(Object):
     def __init__(self, logger):
         super().__init__(logger)
 
-    def normalize(self, caller, method_name, entry, attribute):
+    def normalize(self, caller, method_name, entry, attribute, undo=False):
         method = self.get_method(method_name)
-        method(caller, entry, attribute)
+        method(caller, entry, attribute, undo)
 
-    def normalize_mention_span(self, caller, entry, attribute):
-        attribute_name = attribute.get('name')
-        value = entry.get(attribute_name)
-        search_obj = re.search(r'^(.*?):(-?[0-9]+)-(-?[0-9]+)$', value)
-        if search_obj:
-            document_id = search_obj.group(1)
-            start_x = search_obj.group(2)
-            end_x = search_obj.group(3)
-            normalized_value = '{}:({},0)-({},0)'.format(document_id, start_x, end_x)
-            entry.set(attribute_name, normalized_value)
+    def normalize_mention_span(self, caller, entry, attribute, undo):
+        if undo:
+            attribute_name = attribute.get('name')
+            value = entry.get(attribute_name)
+            search_obj = re.search('^(.*?):\((\S+),(\S+)\)-\((\S+),(\S+)\)$', value)
+            if search_obj:
+                document_id = search_obj.group(1)
+                start_x = search_obj.group(2)
+                end_x = search_obj.group(4)
+                unnormalized_value = '{}:{}-{}'.format(document_id, start_x, end_x)
+                entry.set(attribute_name, unnormalized_value)
+        else:
+            attribute_name = attribute.get('name')
+            value = entry.get(attribute_name)
+            search_obj = re.search(r'^(.*?):(-?[0-9]+)-(-?[0-9]+)$', value)
+            if search_obj:
+                document_id = search_obj.group(1)
+                start_x = search_obj.group(2)
+                end_x = search_obj.group(3)
+                normalized_value = '{}:({},0)-({},0)'.format(document_id, start_x, end_x)
+                entry.set(attribute_name, normalized_value)
 
 class Validator(Object):
     """
-    Validator for values in a response.
+    This class is used for validating the following type of files:
+    
+    (1) Gold annotations,
+    (2) System responses
     """
 
     def __init__(self, logger):
         super().__init__(logger)
 
     def parse_provenance(self, provenance):
+        # parse a string of the form "document_id:(start_x,start_y)-(end_x,end_y)" and
+        # return a dictionary object containing parsed fields.
         search_obj = re.search('^(.*?):\((\S+),(\S+)\)-\((\S+),(\S+)\)$', provenance)
         if not search_obj: return
         document_id = search_obj.group(1)
@@ -756,12 +772,14 @@ class Validator(Object):
             'end_y':end_y}
 
     def validate(self, caller, method_name, schema, entry, attribute, data):
+        # this is the main method called by the validator script
         method = self.get_method(method_name)
         if method is None:
             self.record_event('UNDEFINED_METHOD', method_name)
         return method(caller, schema, entry, attribute, data)
 
     def validate_confidence(self, caller, schema, entry, attribute, data):
+        # validate if the confidence is 0 (noninclusive) and 1 (inclusive)
         confidence = entry.get(attribute.get('name'))
         if not 0 < float(confidence) <= 1.0:
             self.record_event('INVALID_CONFIDENCE', confidence, entry.get('where'))
@@ -769,11 +787,17 @@ class Validator(Object):
         return True
 
     def validate_entity_types(self, caller, schema, entry, attribute, data):
+        # validate if the entity types are one of the allowed types
         allowed_values = data['allowed_entity_types']
         provided_values = ','.join(entry.get(attribute.get('name')).split(';'))
         return self.validate_set_membership('entity_type', allowed_values, provided_values, entry.get('where'))
 
     def validate_mention_span(self, caller, schema, entry, attribute, data):
+        # validate that mention span:
+        # - contains a valid document ID,
+        # - has offsets mentioned in proper order,
+        # - has positive offsets,
+        # - falls within document bounds
         def parse(span):
             return span.split(':')
         mention_span = entry.get(attribute.get('name'))
@@ -795,13 +819,16 @@ class Validator(Object):
         return True
 
     def validate_mention_type(self, caller, schema, entry, attribute, data):
+        # validate if mention type is one of the allowed type
         allowed_values = data['allowed_mention_types']
         return self.validate_set_membership('mention_type', allowed_values, entry.get(attribute.get('name')), entry.get('where'))
 
     def validate_run_id(self, caller, schema, entry, attribute, data):
+        # all run IDs are valid
         return True
 
     def validate_set_membership(self, name, allowed_values, values, where):
+        # this method is used by other methods to check if all values are in allowed values
         for value in sorted(values.split(',')):
             if value not in allowed_values:
                 self.record_event('UNKNOWN_VALUE', name, value, ', '.join(sorted(allowed_values)), where)
