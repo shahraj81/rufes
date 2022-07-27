@@ -113,7 +113,7 @@ class GenerateSegmentBoundaries(RUFESObject):
 
 class ValidateResponses(RUFESObject):
     """
-    Class used by the script for validating responses.
+    Validating responses (or gold annotations) file.
     """
 
     schemas = {
