@@ -1,0 +1,19 @@
+NIST	annotation-1	Senate	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:144-149	senate	ORG;ORG.Government;ORG.Government.Legislature	NAM	1.0
+NIST	annotation-3	Congressional Research Service	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:168-197	CRS	ORG;ORG.Government;ORG.Government.Agency	NAM	1.0
+NIST	annotation-11	CRS	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:478-480	CRS	ORG;ORG.Government;ORG.Government.Agency	NAM	1.0
+NIST	annotation-18	Bush	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:733-736	Bush admin	ORG;ORG.Government;ORG.Government.Administration	NAM	1.0
+NIST	annotation-21	Library of Congress	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:811-829	Lib of Cong	ORG;ORG.Government;ORG.Government.Agency	NAM	1.0
+NIST	annotation-24	CRS	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:894-896	CRS	ORG;ORG.Government;ORG.Government.Agency	NAM	1.0
+NIST	annotation-27	Janine D'Addario	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:947-962	Addario	PER;PER.CivilServant;PER.CivilServant.Spokesperson	NAM	1.0
+NIST	annotation-33	GOP	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1144-1146	GOP	ORG;ORG.PoliticalOrganization;ORG.PoliticalOrganization.Party	NAM	1.0
+NIST	annotation-38	CRS	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1282-1284	CRS	ORG;ORG.Government;ORG.Government.Agency	NAM	1.0
+NIST	annotation-41	CRS	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1349-1351	CRS	ORG;ORG.Government;ORG.Government.Agency	NAM	1.0
+NIST	annotation-50	House	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1892-1896	House	ORG;ORG.Government;ORG.Government.Legislature	NAM	1.0
+NIST	annotation-52	Bush	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1921-1924	Bush admin	ORG;ORG.Government;ORG.Government.Administration	NAM	1.0
+NIST	annotation-55	Thomas Hungerford	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:2074-2090	Thomas Hungerford	PER;PER.Professional;PER.Professional.Scientist	NAM	1.0
+NIST	annotation-64	CRS	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:2377-2379	CRS	ORG;ORG.Government;ORG.Government.Agency	NAM	1.0
+NIST	annotation-68	Antonia Ferrier	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:2493-2507	Ferrier	PER;PER.CivilServant;PER.CivilServant.Spokesperson	NAM	1.0
+NIST	annotation-69	Senate GOP Finance Committee	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:2533-2560	Senate Finance Cmte	ORG;ORG.Government;ORG.Government.LegislativeCommittee	NAM	1.0
+NIST	annotation-70	House	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:2567-2571	House	ORG;ORG.Government;ORG.Government.Legislature	NAM	1.0
+NIST	annotation-71	Democrats	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:2573-2581	Democrats	PER;PER.Politician;PER.Politician.Legislator	NAM	1.0
+NIST	annotation-72	report	20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:2627-2632	rev report	Document;Document.Report	NAM	1.0

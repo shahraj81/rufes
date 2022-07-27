@@ -1,0 +1,10 @@
+DocID                                          RunID    GoldEntityID SystemEntityID                Prec Recall     F1
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run CRS          CRS                         1.0000 1.0000 1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run None         Addario                     0.0000 0.0000 0.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run None         other people                0.0000 0.0000 0.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run None         republicans blasting report 0.0000 0.0000 0.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run orig report  orig report                 1.0000 1.0000 1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run republicans  republicans                 0.0000 0.0000 0.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run rev report   rev report                  1.0000 1.0000 1.0000
+20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 test-run section      None                        0.0000 0.0000 0.0000
+Summary                                        test-run                                                        0.3750

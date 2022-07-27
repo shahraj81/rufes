@@ -1,0 +1,8 @@
+NIST	annotation-1	Mitt Romney	20111231_WAPO_2ee2b1ca-33d9-11e1-a274-61fcdeecc5f5:153-164	Mitt Romney	PER;PER.Politician	NAM1	1.0
+NIST	annotation-2	Obama	20111231_WAPO_2ee2b1ca-33d9-11e1-a274-61fcdeecc5f5:1098-1102	Obama	PER;PER.Politician;PER.Politician.HeadOfGovernment	NAM	1.1
+NIST	annotation-3	Mitt Romney	20111231_WAPO_2ee2b1ca-33d9-11e1-a274-61fcdeecc5f5:153-164	Mitt Romney	PER;PER.Politician1	NAM	1.0
+NIST	annotation-4	Obama	20111231_WAPO_2ee2b1ca-33d9-11e1-a274-61fcdeecc5f5:1098-1102	Obama	PER;PER.Politician;PER.Politician.HeadOfGovernment1	NAM	1.0
+NIST	annotation-5	Mitt Romney	20111231_WAPO_2ee2b1ca-33d9-11e1-a274-61fcdeecc5f5:164-153	Mitt Romney	PER;PER.Politician	NAM	1.0
+NIST	annotation-6	Obama	20111231_WAPO_2ee2b1ca-33d9-11e1-a274-61fcdeecc5f5:1098-110200	Obama	PER;PER.Politician;PER.Politician.HeadOfGovernment	NAM	1.0
+NIST	annotation-7	Mitt Romney	20111231_WAPO_2ee2b1ca-33d9-11e1-a274-61fcdeecc5f5a:153-164	Mitt Romney	PER;PER.Politician	NAM	1.0
+NIST	annotation-8	Obama	20111231_WAPO_2ee2b1ca-33d9-11e1-a274-61fcdeecc5f5:-1098-1102	Obama	PER;PER.Politician;PER.Politician.HeadOfGovernment	NAM	1.0
