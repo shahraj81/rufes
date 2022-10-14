@@ -1,4 +1,4 @@
-DocID                                          RunID GoldEntityID                                             SystemEntityID                                           AveragePrecision
+DocID                                          RunID GoldMentionID                                            SystemMentionID                                          AveragePrecision
 20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 runID 20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1033-1034 20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1033-1034           1.0000
 20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 runID 20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1059-1064 20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1059-1064           1.0000
 20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402 runID 20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1096-1103 20121213_WAPO_89fb0ad94e02f710be5c6a3aa2f71402:1096-1103           1.0000
