@@ -726,9 +726,9 @@ class Scorer(Object):
     def __str__(self):
         return self.get('scores').__str__()
 
-class TypeMetricScoreV1(Score):
+class ClusterTypesMetricScoreV1(Score):
     """
-    AIDA class for type metric score corresponding to the TypeMetricScorerV1.
+    AIDA class for cluster types metric score corresponding to the ClusterTypesMetricScorerV1.
     """
     def __init__(self, logger, run_id, document_id, gold_entity_id, system_entity_id, precision, recall, f1, summary=False):
         super().__init__(logger)
@@ -741,14 +741,12 @@ class TypeMetricScoreV1(Score):
         self.f1 = f1
         self.summary = summary
 
-class TypeMetricScorerV1A(Scorer):
+class ClusterTypesMetricScorerV1(Scorer):
     """
-    Class for variant # 1A of the type metric scores.
+    Class for variant # 1 of cluster types metric scores.
 
     This variant of the scorer considers all types asserted on the cluster as a set, and uses this set to compute
     precision, recall and F1.
-    
-    Clustering is based on entity_id.
     """
 
     printing_specs = [{'name': 'document_id',      'header': 'DocID',           'format': 's',    'justify': 'L'},
@@ -907,7 +905,7 @@ class TypeMetricScorerV1A(Scorer):
                 f1 = document_scores[gold_entity_id_and_system_entity_id]['f1']
                 mean_f1 += f1
                 count += 1
-                score = TypeMetricScoreV1(self.logger,
+                score = ClusterTypesMetricScoreV1(self.logger,
                                         self.get('run_id'),
                                         document_id,
                                         gold_entity_id,
@@ -923,7 +921,7 @@ class TypeMetricScorerV1A(Scorer):
                                         ('system_entity_id', False))):
             scores_printer.add(score)
         mean_f1 = mean_f1 / count if count else 0
-        mean_score = TypeMetricScoreV1(self.logger,
+        mean_score = ClusterTypesMetricScoreV1(self.logger,
                                    self.get('run_id'),
                                    'Summary',
                                    '',
@@ -935,9 +933,9 @@ class TypeMetricScorerV1A(Scorer):
         scores_printer.add(mean_score)
         self.scores = scores_printer
 
-class TypeMetricScoreV2(Score):
+class ClusterTypesMetricScoreV2(Score):
     """
-    AIDA class for type metric score corresponding to the TypeMetricScorerV2.
+    AIDA class for cluster types metric score corresponding to the ClusterTypesMetricScorerV2.
     """
     def __init__(self, logger, run_id, document_id, gold_entity_id, system_entity_id, average_precision, summary=False):
         super().__init__(logger)
@@ -948,15 +946,14 @@ class TypeMetricScoreV2(Score):
         self.average_precision = average_precision
         self.summary = summary
 
-class TypeMetricScorerV2A(Scorer):
+class ClusterTypesMetricScorerV2(Scorer):
     """
-    Class for variant # 2A of the type metric scores.
+    Class for variant # 2 of the cluster types metric scores.
 
     This variant of the scorer ranks the types asserted on the cluster, and computes AP where:
         * ranking is induced using weights on types, and
         * the weights on a type is the number of mentions asserting that type.
 
-    Clustering is based on entity_id.
     """
 
     printing_specs = [{'name': 'document_id',      'header': 'DocID',           'format': 's',    'justify': 'L'},
@@ -1062,7 +1059,7 @@ class TypeMetricScorerV2A(Scorer):
                 average_precision = document_scores[gold_entity_id_and_system_entity_id]['average_precision']
                 mean_average_precision += average_precision
                 count += 1
-                score = TypeMetricScoreV2(self.logger,
+                score = ClusterTypesMetricScoreV2(self.logger,
                                         self.get('run_id'),
                                         document_id,
                                         gold_entity_id,
@@ -1076,7 +1073,7 @@ class TypeMetricScorerV2A(Scorer):
                                         ('system_entity_id', False))):
             scores_printer.add(score)
         mean_average_precision = mean_average_precision / count if count else 0
-        mean_score = TypeMetricScoreV2(self.logger,
+        mean_score = ClusterTypesMetricScoreV2(self.logger,
                                    self.get('run_id'),
                                    'Summary',
                                    '',
@@ -1086,15 +1083,13 @@ class TypeMetricScorerV2A(Scorer):
         scores_printer.add(mean_score)
         self.scores = scores_printer
 
-class TypeMetricScorerV3A(TypeMetricScorerV2A):
+class ClusterTypesMetricScorerV3(ClusterTypesMetricScorerV2):
     """
-    Class for variant # 3A of the type metric scores.
+    Class for variant # 3 of the cluster types metric scores.
 
     This variant of the scorer ranks the types asserted on the cluster, and computes AP where:
         * ranking is induced using weights on types, and
         * the weight on a type is computed as the sum of confidences on mentions asserting that type.
-
-    Clustering is based on entity_id.
     """
 
     def __init__(self, logger, separator=None, **kwargs):
@@ -1135,14 +1130,12 @@ class TypeMetricScorerV3A(TypeMetricScorerV2A):
         average_precision = sum_precision/len(entity_types.get('gold'))
         return average_precision
 
-class TypeMetricScorerV1B(TypeMetricScorerV1A):
+class MentionTypesMetricScorerV1(ClusterTypesMetricScorerV1):
     """
-    Class for variant # 1B of the type metric scores.
+    Class for variant # 1 of the mention type metric scores.
 
-    This variant of the scorer considers all types asserted on the cluster as a set, and uses this set to compute
+    This variant of the scorer considers all types asserted on the mention as a set, and uses this set to compute
     precision, recall and F1.
-    
-    Clustering is based on mention_span.
     """
 
     printing_specs = [{'name': 'document_id',      'header': 'DocID',           'format': 's',    'justify': 'L'},
@@ -1162,15 +1155,13 @@ class TypeMetricScorerV1B(TypeMetricScorerV1A):
     def get_cluster_by_columnname(self):
         return 'mention_span'
 
-class TypeMetricScorerV2B(TypeMetricScorerV2A):
+class MentionTypesMetricScorerV2(ClusterTypesMetricScorerV2):
     """
-    Class for variant # 2B of the type metric scores.
+    Class for variant # 2 of the mention types metric scores.
 
-    This variant of the scorer ranks the types asserted on the cluster, and computes AP where:
+    This variant of the scorer ranks the types asserted on the mention, and computes AP where:
         * ranking is induced using weights on types, and
-        * the weights on a type is the number of mentions asserting that type.
-
-    Clustering is based on mention_span.
+        * the weights on a type is always 1.0, essentially ignoring the confidence.
     """
 
     printing_specs = [{'name': 'document_id',      'header': 'DocID',           'format': 's',    'justify': 'L'},
@@ -1188,15 +1179,13 @@ class TypeMetricScorerV2B(TypeMetricScorerV2A):
     def get_cluster_by_columnname(self):
         return 'mention_span'
 
-class TypeMetricScorerV3B(TypeMetricScorerV3A):
+class MentionTypesMetricScorerV3(ClusterTypesMetricScorerV3):
     """
-    Class for variant # 3B of the type metric scores.
+    Class for variant # 3 of the mention types metric scores.
 
-    This variant of the scorer ranks the types asserted on the cluster, and computes AP where:
+    This variant of the scorer ranks the types asserted on the mention, and computes AP where:
         * ranking is induced using weights on types, and
-        * the weight on a type is computed as the sum of confidences on mentions asserting that type.
-
-    Clustering is based on mention_span.
+        * the weight on a type is computed as the confidence on the asserted type.
     """
 
     def __init__(self, logger, separator=None, **kwargs):
@@ -1218,12 +1207,12 @@ class ScoresManager(Object):
         for key in arguments:
             self.set(key, arguments[key])
         self.metrics = {
-            'TypeMetricV1A': TypeMetricScorerV1A,
-            'TypeMetricV2A': TypeMetricScorerV2A,
-            'TypeMetricV3A': TypeMetricScorerV3A,
-            'TypeMetricV1B': TypeMetricScorerV1B,
-            'TypeMetricV2B': TypeMetricScorerV2B,
-            'TypeMetricV3B': TypeMetricScorerV3B,
+            'ClusterTypesMetricV1': ClusterTypesMetricScorerV1,
+            'ClusterTypesMetricV2': ClusterTypesMetricScorerV2,
+            'ClusterTypesMetricV3': ClusterTypesMetricScorerV3,
+            'MentionTypesMetricV1': MentionTypesMetricScorerV1,
+            'MentionTypesMetricV2': MentionTypesMetricScorerV2,
+            'MentionTypesMetricV3': MentionTypesMetricScorerV3,
             }
         self.separator = separator
         self.scores = Container(logger)
