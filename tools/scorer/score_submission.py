@@ -1145,6 +1145,14 @@ class TypeMetricScorerV1B(TypeMetricScorerV1A):
     Clustering is based on mention_span.
     """
 
+    printing_specs = [{'name': 'document_id',      'header': 'DocID',           'format': 's',    'justify': 'L'},
+                      {'name': 'run_id',           'header': 'RunID',           'format': 's',    'justify': 'L'},
+                      {'name': 'gold_entity_id',   'header': 'GoldMentionID',   'format': 's',    'justify': 'L'},
+                      {'name': 'system_entity_id', 'header': 'SystemMentionID', 'format': 's',    'justify': 'L'},
+                      {'name': 'precision',        'header': 'Prec',            'format': '6.4f', 'justify': 'R', 'mean_format': 's'},
+                      {'name': 'recall',           'header': 'Recall',          'format': '6.4f', 'justify': 'R', 'mean_format': 's'},
+                      {'name': 'f1',               'header': 'F1',              'format': '6.4f', 'justify': 'R', 'mean_format': '6.4f'}]
+
     def __init__(self, logger, separator=None, **kwargs):
         super().__init__(logger, separator=separator, **kwargs)
 
@@ -1164,6 +1172,12 @@ class TypeMetricScorerV2B(TypeMetricScorerV2A):
 
     Clustering is based on mention_span.
     """
+
+    printing_specs = [{'name': 'document_id',      'header': 'DocID',           'format': 's',    'justify': 'L'},
+                      {'name': 'run_id',           'header': 'RunID',           'format': 's',    'justify': 'L'},
+                      {'name': 'gold_entity_id',   'header': 'GoldMentionID',   'format': 's',    'justify': 'L'},
+                      {'name': 'system_entity_id', 'header': 'SystemMentionID', 'format': 's',    'justify': 'L'},
+                      {'name': 'average_precision','header': 'AveragePrecision','format': '6.4f', 'justify': 'R', 'mean_format': '6.4f'}]
 
     def __init__(self, logger, separator=None, **kwargs):
         super().__init__(logger, separator=separator, **kwargs)
