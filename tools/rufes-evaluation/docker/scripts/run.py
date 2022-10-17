@@ -19,6 +19,8 @@ import sys
 ALLOK_EXIT_CODE = 0
 ERROR_EXIT_CODE = 255
 
+EXPECTED_NUM_OF_TYPING_SCORE_FILES = 6
+
 choices = ['complete', 'NAM', 'NOM', 'PRO', 'NAM-NOM', 'NAM-PRO', 'NOM-PRO']
 
 
@@ -52,7 +54,7 @@ def generate_results_file_and_exit(logger, logs_directory):
     scores = {}
     for dir_name in choices:
         typing = []
-        expected = 3
+        expected = EXPECTED_NUM_OF_TYPING_SCORE_FILES
         for filename in os.listdir(os.path.join(args.output, dir_name, 'typing')):
             if filename.endswith('-scores.txt'):
                 typing.append(os.path.join(args.output, dir_name, 'typing', filename))
@@ -99,7 +101,7 @@ def generate_results_file_and_exit(logger, logs_directory):
     scores['Errors'] = num_problems
     scores['ErrorStats'] = problem_stats
     scores['FatalError'] = fatal_error
-    scores['Total'] = scores['complete:TypeMetricV1']
+    scores['Total'] = scores['complete:ClusterTypesMetricV1']
 
     output = {'scores' : [
                             scores
@@ -186,7 +188,7 @@ def main(args):
         generate_results_file_and_exit(logger, logs_directory)
 
     #############################################################################################
-    # Copy system response file into appropriate location
+    # Copy system response file into appropriate location, apply coredocs filter and validate
     #############################################################################################
 
     record_and_display_message(logger, 'Copying system response file into appropriate location.')
@@ -195,10 +197,20 @@ def main(args):
     call_system('cp -r {input}/{filename}.tab {destination}/{filename}-raw.tab'.format(input=args.input, filename=filename, destination=destination))
 
     # apply coredocs filter
-    call_system('grep -f {data}/{coredocs} {destination}/{filename}-raw.tab > {destination}/{filename}.tab'.format(data=args.data, coredocs=args.coredocs, destination=destination, filename=filename))
+    call_system('grep -f {data}/{coredocs} {destination}/{filename}-raw.tab > {destination}/{filename}-unvalidated.tab'.format(data=args.data, coredocs=args.coredocs, destination=destination, filename=filename))
+
+    # validate responses
+    validate_command = 'python rufesutils.py validate-responses \
+                         -l {logs_directory}/validate-responses.log \
+                         ./log_specifications.txt \
+                         {data}/segment_boundaries.tab \
+                         {data}/ontology_types.txt \
+                         {destination}/{filename}-unvalidated.tab \
+                         {destination}/{filename}.tab'
+    call_system(validate_command.format(logs_directory=logs_directory, data=args.data, destination=destination, filename=filename))
 
     #############################################################################################
-    # Copy gold annotations file into appropriate location
+    # Copy gold annotations file into appropriate location and apply coredocs filter
     #############################################################################################
 
     gold_destination = '/gold'.format(output=args.output)

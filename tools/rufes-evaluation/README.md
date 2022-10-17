@@ -92,11 +92,11 @@ docker run \
 
 # Revision History
 
-## 05/21/2021:
-* Initial version.
-
 ## 05/27/2021:
 * Coredocs filtering added.
 * Alternative ways to build and run docker added.
+
+## 05/21/2021:
+* Initial version.
 
 [top](#how-to-run-the-rufes-evaluation-pipeline)

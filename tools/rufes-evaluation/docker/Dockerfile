@@ -15,28 +15,23 @@ RUN apt-get update && apt-get install -y \
 RUN dpkg-reconfigure -f noninteractive tzdata
 
 #-------------------------------------------------------------
-# Upgrade pip and install munkres
+# Upgrade pip and install required packages
 #-------------------------------------------------------------
 
 RUN python3.9 -m pip install --upgrade pip 
-RUN pip3.9 install munkres
-
-#-------------------------------------------------------------
-# Install neleval and scipy
-#-------------------------------------------------------------
-
-RUN pip install neleval
-RUN pip install scipy
+COPY requirements.txt ./
+RUN pip3.9 install -r requirements.txt
 
 # Setup the AIDA repository
 WORKDIR /scripts
 
-RUN git clone https://github.com/shahraj81/rufes.git
+RUN git clone -b TYPEMETRIC-v2022.1.0 https://github.com/shahraj81/rufes.git
 
 # Setup the scripts directory
 COPY ./scripts/* ./
 RUN cp /scripts/rufes/tools/scorer/score_submission.py /scripts/
 RUN cp /scripts/rufes/input/log_specifications.txt /scripts/
+RUN cp /scripts/rufes/scripts/*.py /scripts/
 
 WORKDIR /scripts/
 

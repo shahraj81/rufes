@@ -1,6 +1,6 @@
 # Introduction
 
-February 5, 2020 (version 2020.2.0)
+October 14, 2022
 
 This document describes the usage of the type metric score for RUFES track organized in sections given below:
 
@@ -11,7 +11,6 @@ This document describes the usage of the type metric score for RUFES track organ
 5. How to read the scorer output,
 6. How to read the log file,
 7. Revision history
-
 
 # Pre-requisites
 
@@ -24,7 +23,11 @@ In order to run the script you would need to:
 
 # Latest version
 
-The latest version of the code is `v2020.2.0` which can be found in branch: `TYPEMETRIC-v2020.2.0`.
+The latest version of the code is `v2022.1.0` which can be found in branch: `TYPEMETRIC-v2022.1.0`.
+
+# How to apply the docker to run the entire evaluation pipeline on a submission
+
+Refer to `tools/rufes-evaluation/README.md`.
 
 # How to run the scorer
 
@@ -71,11 +74,11 @@ python score_submission.py -l ../../input/demo/log.txt -r demo ../../input/log_s
 
 The scorer produces the following scoring variants:
 
-## TypeMetricV1
+## ClusterTypesMetricV1
 
 This variant uses all the types asserted on the cluster as a set, and uses this set to compute Precision, Recall and F1.
 
-The scores corresponding to this variant can be found in file: `TypeMetricV1-scores.txt` which contains the following columns:
+The scores corresponding to this variant can be found in file: `ClusterTypesMetricV1-scores.txt` which contains the following columns:
 
 - Column # 1: Document ID
 - Column # 2: Run ID
@@ -85,13 +88,13 @@ The scores corresponding to this variant can be found in file: `TypeMetricV1-sco
 - Column # 6: Recall
 - Column # 7: F1
 
-## TypeMetricV2
+## ClusterTypesMetricV2
 
 This variant of the scorer ranks the types asserted on the cluster, and computes AP where:
 * ranking is induced using weights on types, and
 * the weights on a type is the number of mentions asserting that type.
 
-The scores corresponding to this variant can be found in file: `TypeMetricV2-scores.txt` which contains the following columns:
+The scores corresponding to this variant can be found in file: `ClusterTypesMetricV2-scores.txt` which contains the following columns:
 
 - Column # 1: Document ID
 - Column # 2: Run ID
@@ -99,18 +102,60 @@ The scores corresponding to this variant can be found in file: `TypeMetricV2-sco
 - Column # 4: System Entity ID
 - Column # 5: Average Precision
 
-## TypeMetricV3
+## ClusterTypesMetricV3
 
 This variant of the scorer ranks the types asserted on the cluster, and computes AP where:
 * ranking is induced using weights on types, and
 * the weight on a type is computed as the sum of confidences on mentions asserting that type.
 
-The scores corresponding to this variant can be found in file: `TypeMetricV3-scores.txt` which contains the following columns:
+The scores corresponding to this variant can be found in file: `ClusterTypesMetricV3-scores.txt` which contains the following columns:
 
 - Column # 1: Document ID
 - Column # 2: Run ID
 - Column # 3: Gold Entity ID
 - Column # 4: System Entity ID
+- Column # 5: Average Precision
+
+## MentionTypesMetricV1
+
+This variant uses all the types asserted on a mention as a set, and uses this set to compute Precision, Recall and F1.
+
+The scores corresponding to this variant can be found in file: `MentionTypesMetricV1-scores.txt` which contains the following columns:
+
+- Column # 1: Document ID
+- Column # 2: Run ID
+- Column # 3: Gold Mention ID
+- Column # 4: System Mention ID
+- Column # 5: Precision
+- Column # 6: Recall
+- Column # 7: F1
+
+## MentionTypesMetricV2
+
+This variant of the scorer ranks the types asserted on a mention, and computes AP where:
+* ranking is induced using weights on types, and
+* the weights on a type is the number of mentions asserting that type.
+
+The scores corresponding to this variant can be found in file: `MentionTypesMetricV2-scores.txt` which contains the following columns:
+
+- Column # 1: Document ID
+- Column # 2: Run ID
+- Column # 3: Gold Mention ID
+- Column # 4: System Mention ID
+- Column # 5: Average Precision
+
+## MentionTypesMetricV3
+
+This variant of the scorer ranks the types asserted on a mention, and computes AP where:
+* ranking is induced using weights on types, and
+* the weight on a type is computed as the sum of confidences on mentions asserting that type.
+
+The scores corresponding to this variant can be found in file: `MentionTypesMetricV3-scores.txt` which contains the following columns:
+
+- Column # 1: Document ID
+- Column # 2: Run ID
+- Column # 3: Gold Mention ID
+- Column # 4: System Mention ID
 - Column # 5: Average Precision
 
 # How to read the log file
@@ -135,9 +180,13 @@ This log entry contains information about gold or system entity types provided a
 
 # Revision history
 
-## 12/03/2020:
-* Initial version.
+## 10/14/2022:
+* Added new metrics
+* Metric names changed
 
 ## 02/05/2021:
 * Version # 2020.2.0 released in its own branch.
 * Additional scoring variants added.
+
+## 12/03/2020:
+* Initial version.

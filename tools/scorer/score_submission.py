@@ -52,11 +52,11 @@ def expanded_types(entity_types):
             expanded_types.add(expanded_type)
     return expanded_types
 
-def parse_entries(entries):
+def parse_entries(entries, cluster_id_columnname):
         parsed_entries = {}
         for entry in entries:
             document_id = entry.get('mention_span').split(':')[0]
-            entity_id = entry.get('entity_id')
+            entity_id = entry.get(cluster_id_columnname)
             if document_id not in parsed_entries:
                 parsed_entries[document_id] = {}
             if entity_id not in parsed_entries[document_id]:
@@ -525,20 +525,21 @@ class Logger:
         debug_message = "Execution begins {current_dir:" + self.path_name + ", script_name:" + self.file_name + ", arguments:" + self.arguments +"}"
         self.logger_object.info(debug_message)
 
-class ClusterAlignment(Object):
+class Alignment(Object):
     """
     Class for performing alignment, and supporting lookup.
     """
 
-    def __init__(self, logger, gold, system):
+    def __init__(self, logger, gold, system, cluster_by_columnname):
         super().__init__(logger)
+        self.cluster_by_columnname = cluster_by_columnname
         self.gold = gold
         self.system = system
         self.document_alignment = {}
         self.align_clusters()
 
     def get_parsed_entries(self, entries):
-        return(parse_entries(entries))
+        return(parse_entries(entries, self.get('cluster_by_columnname')))
 
     def align_clusters(self):
         def get_max_similarity(similarities):
@@ -630,7 +631,7 @@ class ClusterAlignment(Object):
                     similarity = len(common_mentions)
                     similarities[gold_entity_id][system_entity_id] = similarity
                     if similarity > 0:
-                        self.record_event('SIMILARITY_INFO', document_id, gold_entity_id, system_entity_id, similarity, ';'.join(common_mentions))
+                        self.record_event('SIMILARITY_INFO', self.__class__.__name__, document_id, gold_entity_id, system_entity_id, similarity, ';'.join(common_mentions))
             mappings = {}
             for gold_or_system in ['gold', 'system']:
                 mappings[gold_or_system] = {'id_to_index': {}, 'index_to_id': {}}
@@ -725,9 +726,9 @@ class Scorer(Object):
     def __str__(self):
         return self.get('scores').__str__()
 
-class TypeMetricScoreV1(Score):
+class ClusterTypesMetricScoreV1(Score):
     """
-    AIDA class for type metric score corresponding to the TypeMetricScorerV1.
+    AIDA class for cluster types metric score corresponding to the ClusterTypesMetricScorerV1.
     """
     def __init__(self, logger, run_id, document_id, gold_entity_id, system_entity_id, precision, recall, f1, summary=False):
         super().__init__(logger)
@@ -740,9 +741,9 @@ class TypeMetricScoreV1(Score):
         self.f1 = f1
         self.summary = summary
 
-class TypeMetricScorerV1(Scorer):
+class ClusterTypesMetricScorerV1(Scorer):
     """
-    Class for variant # 1 of the type metric scores.
+    Class for variant # 1 of cluster types metric scores.
 
     This variant of the scorer considers all types asserted on the cluster as a set, and uses this set to compute
     precision, recall and F1.
@@ -761,6 +762,12 @@ class TypeMetricScorerV1(Scorer):
 
     def order(self, k):
         return k
+
+    def get_alignment(self):
+        return self.get('cluster_alignment')
+
+    def get_cluster_by_columnname(self):
+        return 'entity_id'
 
     def get_document_scores(self, document_id, document_annotations, document_responses, document_alignment):
         def get_max_similarity(similarities):
@@ -829,6 +836,7 @@ class TypeMetricScorerV1(Scorer):
                     for expanded_entity_type in expanded_types(list(entry.get('entity_types').split(';'))):
                         types[gold_or_system].add(expanded_entity_type)
                 logger.record_event('ENTITY_TYPES_INFO',
+                                    self.__class__.__name__,
                                     gold_or_system.upper(),
                                     document_id,
                                     entity_ids[gold_or_system],
@@ -849,7 +857,7 @@ class TypeMetricScorerV1(Scorer):
                 system_entity_id = document_alignment.get('gold_to_system').get(gold_entity_id).get('aligned_to')
                 similarity = document_alignment.get('gold_to_system').get(gold_entity_id).get('aligned_similarity')
             precision, recall, f1 = 0,0,0
-            self.record_event('ALIGNMENT_INFO', document_id, gold_entity_id, system_entity_id, similarity)
+            self.record_event('ALIGNMENT_INFO', self.__class__.__name__, document_id, gold_entity_id, system_entity_id, similarity)
             if system_entity_id != 'None':
                 precision, recall, f1 = get_type_scores(self.get('logger'),
                                                         document_id,
@@ -873,11 +881,11 @@ class TypeMetricScorerV1(Scorer):
                     'f1'       : f1
                     }
                 scores['{}::[SEP]::{}'.format(gold_entity_id, system_entity_id)] = score
-                self.record_event('ALIGNMENT_INFO', document_id, gold_entity_id, system_entity_id, similarity)
+                self.record_event('ALIGNMENT_INFO', self.__class__.__name__, document_id, gold_entity_id, system_entity_id, similarity)
         return scores
 
     def get_parsed_entries(self, entries):
-        return(parse_entries(entries))
+        return(parse_entries(entries, self.get('cluster_by_columnname')))
 
     def score_responses(self):
         annotations = self.get('parsed_entries', self.get('gold').get('entries'))
@@ -888,7 +896,7 @@ class TypeMetricScorerV1(Scorer):
         for document_id in annotations:
             document_annotations = annotations.get(document_id)
             document_responses = responses.get(document_id, [])
-            document_alignment = self.get('cluster_alignment').get('document_alignment').get(document_id)
+            document_alignment = self.get('alignment').get('document_alignment').get(document_id)
             document_scores = self.get('document_scores', document_id, document_annotations, document_responses, document_alignment)
             for gold_entity_id_and_system_entity_id in document_scores:
                 gold_entity_id, system_entity_id = gold_entity_id_and_system_entity_id.split('::[SEP]::')
@@ -897,7 +905,7 @@ class TypeMetricScorerV1(Scorer):
                 f1 = document_scores[gold_entity_id_and_system_entity_id]['f1']
                 mean_f1 += f1
                 count += 1
-                score = TypeMetricScoreV1(self.logger,
+                score = ClusterTypesMetricScoreV1(self.logger,
                                         self.get('run_id'),
                                         document_id,
                                         gold_entity_id,
@@ -913,7 +921,7 @@ class TypeMetricScorerV1(Scorer):
                                         ('system_entity_id', False))):
             scores_printer.add(score)
         mean_f1 = mean_f1 / count if count else 0
-        mean_score = TypeMetricScoreV1(self.logger,
+        mean_score = ClusterTypesMetricScoreV1(self.logger,
                                    self.get('run_id'),
                                    'Summary',
                                    '',
@@ -925,9 +933,9 @@ class TypeMetricScorerV1(Scorer):
         scores_printer.add(mean_score)
         self.scores = scores_printer
 
-class TypeMetricScoreV2(Score):
+class ClusterTypesMetricScoreV2(Score):
     """
-    AIDA class for type metric score corresponding to the TypeMetricScorerV2.
+    AIDA class for cluster types metric score corresponding to the ClusterTypesMetricScorerV2.
     """
     def __init__(self, logger, run_id, document_id, gold_entity_id, system_entity_id, average_precision, summary=False):
         super().__init__(logger)
@@ -938,13 +946,14 @@ class TypeMetricScoreV2(Score):
         self.average_precision = average_precision
         self.summary = summary
 
-class TypeMetricScorerV2(Scorer):
+class ClusterTypesMetricScorerV2(Scorer):
     """
-    Class for variant # 2 of the type metric scores.
+    Class for variant # 2 of the cluster types metric scores.
 
     This variant of the scorer ranks the types asserted on the cluster, and computes AP where:
         * ranking is induced using weights on types, and
         * the weights on a type is the number of mentions asserting that type.
+
     """
 
     printing_specs = [{'name': 'document_id',      'header': 'DocID',           'format': 's',    'justify': 'L'},
@@ -959,8 +968,14 @@ class TypeMetricScorerV2(Scorer):
     def order(self, k):
         return k
 
+    def get_alignment(self):
+        return self.get('cluster_alignment')
+
+    def get_cluster_by_columnname(self):
+        return 'entity_id'
+
     def get_parsed_entries(self, entries):
-        return(parse_entries(entries))
+        return(parse_entries(entries, self.get('cluster_by_columnname')))
 
     def get_document_type_scores(self, document_id, gold_entity_id, gold_entries, system_entity_id, system_entries):
         average_precision = 0.0
@@ -992,7 +1007,7 @@ class TypeMetricScorerV2(Scorer):
                 label = 'RIGHT'
                 num_correct += 1
                 sum_precision += (num_correct/rank)
-            self.record_event('AP_INFO', 'TypeMetricScorerV2', rank, type_weight.get('type'), label, type_weight.get('weight'), num_correct, sum_precision)
+            self.record_event('AP_INFO', self.__class__.__name__, document_id, gold_entity_id, system_entity_id, rank, type_weight.get('type'), label, type_weight.get('weight'), num_correct, sum_precision)
 
         average_precision = sum_precision/len(entity_types.get('gold'))
         return average_precision
@@ -1010,7 +1025,7 @@ class TypeMetricScorerV2(Scorer):
                 system_entity_id = document_alignment.get('gold_to_system').get(gold_entity_id).get('aligned_to')
                 similarity = document_alignment.get('gold_to_system').get(gold_entity_id).get('aligned_similarity')
             average_precision = 0
-            self.record_event('ALIGNMENT_INFO', document_id, gold_entity_id, system_entity_id, similarity)
+            self.record_event('ALIGNMENT_INFO', self.__class__.__name__, document_id, gold_entity_id, system_entity_id, similarity)
             if system_entity_id != 'None':
                 average_precision = self.get('document_type_scores', document_id, gold_entity_id, data['gold'][gold_entity_id], system_entity_id, data['system'][system_entity_id])
             score = {
@@ -1025,7 +1040,7 @@ class TypeMetricScorerV2(Scorer):
                     'average_precision': average_precision,
                     }
                 scores['{}::[SEP]::{}'.format(gold_entity_id, system_entity_id)] = score
-                self.record_event('ALIGNMENT_INFO', document_id, gold_entity_id, system_entity_id, similarity)
+                self.record_event('ALIGNMENT_INFO', self.__class__.__name__, document_id, gold_entity_id, system_entity_id, similarity)
         return scores
 
     def score_responses(self):
@@ -1037,14 +1052,14 @@ class TypeMetricScorerV2(Scorer):
         for document_id in annotations:
             document_annotations = annotations.get(document_id)
             document_responses = responses.get(document_id, [])
-            document_alignment = self.get('cluster_alignment').get('document_alignment').get(document_id)
+            document_alignment = self.get('alignment').get('document_alignment').get(document_id)
             document_scores = self.get('document_scores', document_id, document_annotations, document_responses, document_alignment)
             for gold_entity_id_and_system_entity_id in document_scores:
                 gold_entity_id, system_entity_id = gold_entity_id_and_system_entity_id.split('::[SEP]::')
                 average_precision = document_scores[gold_entity_id_and_system_entity_id]['average_precision']
                 mean_average_precision += average_precision
                 count += 1
-                score = TypeMetricScoreV2(self.logger,
+                score = ClusterTypesMetricScoreV2(self.logger,
                                         self.get('run_id'),
                                         document_id,
                                         gold_entity_id,
@@ -1058,7 +1073,7 @@ class TypeMetricScorerV2(Scorer):
                                         ('system_entity_id', False))):
             scores_printer.add(score)
         mean_average_precision = mean_average_precision / count if count else 0
-        mean_score = TypeMetricScoreV2(self.logger,
+        mean_score = ClusterTypesMetricScoreV2(self.logger,
                                    self.get('run_id'),
                                    'Summary',
                                    '',
@@ -1068,9 +1083,9 @@ class TypeMetricScorerV2(Scorer):
         scores_printer.add(mean_score)
         self.scores = scores_printer
 
-class TypeMetricScorerV3(TypeMetricScorerV2):
+class ClusterTypesMetricScorerV3(ClusterTypesMetricScorerV2):
     """
-    Class for variant # 3 of the type metric scores.
+    Class for variant # 3 of the cluster types metric scores.
 
     This variant of the scorer ranks the types asserted on the cluster, and computes AP where:
         * ranking is induced using weights on types, and
@@ -1110,11 +1125,77 @@ class TypeMetricScorerV3(TypeMetricScorerV2):
                 label = 'RIGHT'
                 num_correct += 1
                 sum_precision += (num_correct/rank)
-            self.record_event('AP_INFO', 'TypeMetricScorerV3', rank, type_weight.get('type'), label, type_weight.get('weight'), num_correct, sum_precision)
+            self.record_event('AP_INFO', self.__class__.__name__, document_id, gold_entity_id, system_entity_id, rank, type_weight.get('type'), label, type_weight.get('weight'), num_correct, sum_precision)
 
         average_precision = sum_precision/len(entity_types.get('gold'))
         return average_precision
 
+class MentionTypesMetricScorerV1(ClusterTypesMetricScorerV1):
+    """
+    Class for variant # 1 of the mention type metric scores.
+
+    This variant of the scorer considers all types asserted on the mention as a set, and uses this set to compute
+    precision, recall and F1.
+    """
+
+    printing_specs = [{'name': 'document_id',      'header': 'DocID',           'format': 's',    'justify': 'L'},
+                      {'name': 'run_id',           'header': 'RunID',           'format': 's',    'justify': 'L'},
+                      {'name': 'gold_entity_id',   'header': 'GoldMentionID',   'format': 's',    'justify': 'L'},
+                      {'name': 'system_entity_id', 'header': 'SystemMentionID', 'format': 's',    'justify': 'L'},
+                      {'name': 'precision',        'header': 'Prec',            'format': '6.4f', 'justify': 'R', 'mean_format': 's'},
+                      {'name': 'recall',           'header': 'Recall',          'format': '6.4f', 'justify': 'R', 'mean_format': 's'},
+                      {'name': 'f1',               'header': 'F1',              'format': '6.4f', 'justify': 'R', 'mean_format': '6.4f'}]
+
+    def __init__(self, logger, separator=None, **kwargs):
+        super().__init__(logger, separator=separator, **kwargs)
+
+    def get_alignment(self):
+        return self.get('mention_alignment')
+
+    def get_cluster_by_columnname(self):
+        return 'mention_span'
+
+class MentionTypesMetricScorerV2(ClusterTypesMetricScorerV2):
+    """
+    Class for variant # 2 of the mention types metric scores.
+
+    This variant of the scorer ranks the types asserted on the mention, and computes AP where:
+        * ranking is induced using weights on types, and
+        * the weights on a type is always 1.0, essentially ignoring the confidence.
+    """
+
+    printing_specs = [{'name': 'document_id',      'header': 'DocID',           'format': 's',    'justify': 'L'},
+                      {'name': 'run_id',           'header': 'RunID',           'format': 's',    'justify': 'L'},
+                      {'name': 'gold_entity_id',   'header': 'GoldMentionID',   'format': 's',    'justify': 'L'},
+                      {'name': 'system_entity_id', 'header': 'SystemMentionID', 'format': 's',    'justify': 'L'},
+                      {'name': 'average_precision','header': 'AveragePrecision','format': '6.4f', 'justify': 'R', 'mean_format': '6.4f'}]
+
+    def __init__(self, logger, separator=None, **kwargs):
+        super().__init__(logger, separator=separator, **kwargs)
+
+    def get_alignment(self):
+        return self.get('mention_alignment')
+
+    def get_cluster_by_columnname(self):
+        return 'mention_span'
+
+class MentionTypesMetricScorerV3(ClusterTypesMetricScorerV3):
+    """
+    Class for variant # 3 of the mention types metric scores.
+
+    This variant of the scorer ranks the types asserted on the mention, and computes AP where:
+        * ranking is induced using weights on types, and
+        * the weight on a type is computed as the confidence on the asserted type.
+    """
+
+    def __init__(self, logger, separator=None, **kwargs):
+        super().__init__(logger, separator=separator, **kwargs)
+
+    def get_alignment(self):
+        return self.get('mention_alignment')
+
+    def get_cluster_by_columnname(self):
+        return 'mention_span'
 
 class ScoresManager(Object):
     """
@@ -1126,9 +1207,12 @@ class ScoresManager(Object):
         for key in arguments:
             self.set(key, arguments[key])
         self.metrics = {
-            'TypeMetricV1': TypeMetricScorerV1,
-            'TypeMetricV2': TypeMetricScorerV2,
-            'TypeMetricV3': TypeMetricScorerV3,
+            'ClusterTypesMetricV1': ClusterTypesMetricScorerV1,
+            'ClusterTypesMetricV2': ClusterTypesMetricScorerV2,
+            'ClusterTypesMetricV3': ClusterTypesMetricScorerV3,
+            'MentionTypesMetricV1': MentionTypesMetricScorerV1,
+            'MentionTypesMetricV2': MentionTypesMetricScorerV2,
+            'MentionTypesMetricV3': MentionTypesMetricScorerV3,
             }
         self.separator = separator
         self.scores = Container(logger)
@@ -1141,6 +1225,7 @@ class ScoresManager(Object):
                                                  gold=self.get('gold'),
                                                  system=self.get('system'),
                                                  cluster_alignment=self.get('cluster_alignment'),
+                                                 mention_alignment=self.get('mention_alignment'),
                                                  separator=self.get('separator'))
             self.get('scores').add(key=metric, value=scorer)
 
@@ -1173,10 +1258,12 @@ def main(args):
     header = ['run_id', 'mention_id', 'mention_string', 'mention_span', 'entity_id', 'entity_types', 'mention_type', 'confidence']
     gold = FileHandler(logger, args.gold, header=FileHeader(logger, '\t'.join(header)), encoding='utf-8')
     system = FileHandler(logger, args.system, header=FileHeader(logger, '\t'.join(header)), encoding='utf-8')
-    cluster_alignment = ClusterAlignment(logger, gold, system)
+    cluster_alignment = Alignment(logger, gold, system, 'entity_id')
+    mention_alignment = Alignment(logger, gold, system, 'mention_span')
     arguments = {
         'run_id': args.run,
         'cluster_alignment': cluster_alignment,
+        'mention_alignment': mention_alignment,
         'gold': gold,
         'system': system
         }

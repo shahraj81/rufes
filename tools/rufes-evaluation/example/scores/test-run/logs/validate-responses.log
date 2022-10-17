@@ -1,0 +1,2 @@
+10/17/2022 11:49:29 AM - rufesutils.py - INFO - Execution begins {current_dir:/scripts, script_name:rufesutils.py, arguments:validate-responses -l /score/logs/validate-responses.log ./log_specifications.txt /data/segment_boundaries.tab /data/ontology_types.txt /score/run-out/system_output-unvalidated.tab /score/run-out/system_output.tab}
+10/17/2022 11:49:29 AM - rufesutils.py - INFO - ValidateResponses - DEFAULT_INFO - Execution ends
