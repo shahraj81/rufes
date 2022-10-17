@@ -19,6 +19,8 @@ import sys
 ALLOK_EXIT_CODE = 0
 ERROR_EXIT_CODE = 255
 
+EXPECTED_NUM_OF_TYPING_SCORE_FILES = 6
+
 choices = ['complete', 'NAM', 'NOM', 'PRO', 'NAM-NOM', 'NAM-PRO', 'NOM-PRO']
 
 
@@ -52,7 +54,7 @@ def generate_results_file_and_exit(logger, logs_directory):
     scores = {}
     for dir_name in choices:
         typing = []
-        expected = 3
+        expected = EXPECTED_NUM_OF_TYPING_SCORE_FILES
         for filename in os.listdir(os.path.join(args.output, dir_name, 'typing')):
             if filename.endswith('-scores.txt'):
                 typing.append(os.path.join(args.output, dir_name, 'typing', filename))
@@ -99,7 +101,7 @@ def generate_results_file_and_exit(logger, logs_directory):
     scores['Errors'] = num_problems
     scores['ErrorStats'] = problem_stats
     scores['FatalError'] = fatal_error
-    scores['Total'] = scores['complete:TypeMetricV1']
+    scores['Total'] = scores['complete:ClusterTypesMetricV1']
 
     output = {'scores' : [
                             scores
