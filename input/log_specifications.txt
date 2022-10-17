@@ -13,4 +13,4 @@ INFO      SIMILARITY_INFO                 METRIC: {} DOCID: {} GOLD: {} SYSTEM: 
 ERROR     SPAN_OFF_BOUNDARY               Span '{}' is outside document boundary '{}'
 ERROR     UNEXPECTED_ITEM_FOUND           Unexpected item found in input directory
 ERROR     UNKNOWN_DOCUMENT                Unknown document '{}'
-ERROR     UNKNOWN_VALUE                   Unknown {} '{}' (expected one from {{{}}})
+CRITICAL  UNKNOWN_VALUE                   Unknown {} '{}' (expected one from {{{}}})
