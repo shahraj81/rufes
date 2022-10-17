@@ -1,7 +1,7 @@
-05/24/2021 02:54:55 PM - run.py - INFO - Execution begins {current_dir:/scripts, script_name:run.py, arguments:--run test-run --gold gold.tab --coredocs coredocs.txt}
-05/24/2021 02:54:55 PM - run.py - INFO - DEFAULT_INFO - Inspecting the input directory.
-05/24/2021 02:54:55 PM - run.py - INFO - DEFAULT_INFO - Copying system response file into appropriate location.
-05/24/2021 02:54:55 PM - run.py - INFO - DEFAULT_INFO - Copying gold annotations file into appropriate location.
-05/24/2021 02:54:55 PM - run.py - INFO - DEFAULT_INFO - Generating filtered data.
-05/24/2021 02:54:56 PM - run.py - INFO - DEFAULT_INFO - Scoring filtered data.
-05/24/2021 02:54:58 PM - run.py - INFO - DEFAULT_INFO - Done.
+10/17/2022 11:49:29 AM - run.py - INFO - Execution begins {current_dir:/scripts, script_name:run.py, arguments:--run test-run --gold gold.tab --coredocs coredocs.txt}
+10/17/2022 11:49:29 AM - run.py - INFO - DEFAULT_INFO - Inspecting the input directory.
+10/17/2022 11:49:29 AM - run.py - INFO - DEFAULT_INFO - Copying system response file into appropriate location.
+10/17/2022 11:49:29 AM - run.py - INFO - DEFAULT_INFO - Copying gold annotations file into appropriate location.
+10/17/2022 11:49:29 AM - run.py - INFO - DEFAULT_INFO - Generating filtered data.
+10/17/2022 11:49:29 AM - run.py - INFO - DEFAULT_INFO - Scoring filtered data.
+10/17/2022 11:49:32 AM - run.py - INFO - DEFAULT_INFO - Done.
