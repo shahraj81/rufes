@@ -25,7 +25,7 @@ RUN pip3.9 install -r requirements.txt
 # Setup the AIDA repository
 WORKDIR /scripts
 
-RUN git clone https://github.com/shahraj81/rufes.git
+RUN git clone -b TYPEMETRIC-v2022.1.0 https://github.com/shahraj81/rufes.git
 
 # Setup the scripts directory
 COPY ./scripts/* ./
