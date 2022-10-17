@@ -23,7 +23,11 @@ In order to run the script you would need to:
 
 # Latest version
 
-The latest version of the code is `v2020.2.0` which can be found in branch: `TYPEMETRIC-v2020.2.0`.
+The latest version of the code is `v2022.1.0` which can be found in branch: `TYPEMETRIC-v2022.1.0`.
+
+# How to apply the docker to run the entire evaluation pipeline on a submission
+
+Refer to `tools/rufes-evaluation/README.md`.
 
 # How to run the scorer
 
