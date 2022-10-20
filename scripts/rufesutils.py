@@ -57,13 +57,23 @@ class GenerateSegmentBoundaries(RUFESObject):
                     value = str(entry.get(fieldname))
                 values.append(value)
             return '\t'.join(values)
+        def parse(s):
+            parsed = None
+            m = re.match('^<SEG(.*?)>$', s)
+            if m:
+                parsed = {}
+                s = m.group(1).strip()
+                for key_and_value in s.split():
+                    key, value = [i.strip().strip('"') for i in key_and_value.split('=')]
+                    parsed[key] = value
+            return parsed
         ltfdir = self.get('ltf')
         segment_boundaries = {}
         items = os.listdir(ltfdir)
         filenames = [i for i in items if i.endswith('.ltf.xml')]
         for filename in tqdm(filenames):
             document_id = filename.replace('.ltf.xml', '')
-            filepath = os.path.join(ltfdir, document_id)
+            filepath = os.path.join(ltfdir, filename)
             if os.path.isfile(filepath):
                 segment_boundaries[document_id] = {}
                 with open(filepath) as fh:
@@ -71,10 +81,12 @@ class GenerateSegmentBoundaries(RUFESObject):
                     for line in fh.readlines():
                         length = len(line)
                         line = line.strip()
-                        m = re.match('^<SEG end_char="(\d+)" id="(.*?)" start_char="(\d+)">$', line)
-                        if m:
+                        parsed = parse(line)
+                        if parsed:
                             start_segment_offset = running_offset
-                            end_char, segment_id, start_char = [m.group(i) for i in [1, 2, 3]];
+                            end_char = parsed['end_char']
+                            segment_id = parsed['id']
+                            start_char = parsed['start_char']
                         if re.match('^<\/SEG>$', line):
                             end_segment_offset = running_offset + length - 1;
                             segment_boundaries[document_id][segment_id] = {
