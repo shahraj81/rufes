@@ -115,8 +115,8 @@ def generate_results_file_and_exit(logger, logs_directory):
 
     # add leaderboard specific metrics copies
     leaderboard_metric_mapping = get_leaderboard_metric_mapping(scores)
-    for source_metric_name in leaderboard_metric_mapping:
-        new_metric_name = leaderboard_metric_mapping[source_metric_name]
+    for new_metric_name in leaderboard_metric_mapping:
+        source_metric_name = leaderboard_metric_mapping[new_metric_name]
         scores[new_metric_name] = scores[source_metric_name]
 
     output = {'scores' : [
