@@ -23,7 +23,6 @@ EXPECTED_NUM_OF_TYPING_SCORE_FILES = 6
 
 choices = ['complete', 'NAM', 'NOM', 'PRO', 'NAM-NOM', 'NAM-PRO', 'NOM-PRO']
 
-
 def call_system(cmd):
     cmd = ' '.join(cmd.split())
     print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ": running system command: '{}'".format(cmd))
@@ -48,6 +47,18 @@ def record_and_display_message(logger, message):
     print(message)
     print("----------------------------------------------------------")
     logger.record_event('DEFAULT_INFO', message)
+
+def get_leaderboard_metric_mapping(scores):
+    mapping = {}
+    for metric_name in scores:
+        if metric_name.startswith('complete:'):
+            new_metric_name = metric_name.replace('complete:', '')
+            if new_metric_name in ['ClusterTypesMetricV1', 'MentionTypesMetricV1']:
+                mapping[new_metric_name] = metric_name
+            if new_metric_name.endswith(':fscore'):
+                new_metric_name = new_metric_name.replace(':fscore', '')
+                mapping[new_metric_name] = metric_name
+    return mapping
 
 def generate_results_file_and_exit(logger, logs_directory):
     exit_code = ALLOK_EXIT_CODE
@@ -101,7 +112,12 @@ def generate_results_file_and_exit(logger, logs_directory):
     scores['Errors'] = num_problems
     scores['ErrorStats'] = problem_stats
     scores['FatalError'] = fatal_error
-    scores['Total'] = scores['complete:ClusterTypesMetricV1']
+
+    # add leaderboard specific metrics copies
+    leaderboard_metric_mapping = get_leaderboard_metric_mapping(scores)
+    for source_metric_name in leaderboard_metric_mapping:
+        new_metric_name = leaderboard_metric_mapping[source_metric_name]
+        scores[new_metric_name] = scores[source_metric_name]
 
     output = {'scores' : [
                             scores
