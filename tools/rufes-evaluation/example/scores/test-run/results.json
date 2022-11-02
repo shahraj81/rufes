@@ -1,9 +1,11 @@
 {
     "scores": [
         {
+            "ClusterTypesMetricV1": 0.6169,
             "ErrorStats": {},
             "Errors": 0,
             "FatalError": "No",
+            "MentionTypesMetricV1": 0.6392,
             "NAM-NOM:ClusterTypesMetricV1": 0.5784,
             "NAM-NOM:ClusterTypesMetricV2": 0.5679,
             "NAM-NOM:ClusterTypesMetricV3": 0.5679,
@@ -377,7 +379,7 @@
             "PRO:typed_mention_ceaf:recall": 0.583,
             "PRO:typed_mention_ceaf:rtp": 7.0,
             "RunID": "test-run",
-            "Total": 0.6169,
+            "b_cubed": 0.777,
             "complete:ClusterTypesMetricV1": 0.6169,
             "complete:ClusterTypesMetricV2": 0.6064,
             "complete:ClusterTypesMetricV3": 0.6064,
@@ -439,7 +441,14 @@
             "complete:typed_mention_ceaf:precis": 0.685,
             "complete:typed_mention_ceaf:ptp": 50.0,
             "complete:typed_mention_ceaf:recall": 0.694,
-            "complete:typed_mention_ceaf:rtp": 50.0
+            "complete:typed_mention_ceaf:rtp": 50.0,
+            "entity_ceaf": 0.779,
+            "mention_ceaf": 0.8,
+            "muc": 0.84,
+            "pairwise": 0.713,
+            "strong_mention_match": 0.897,
+            "strong_typed_mention_match": 0.731,
+            "typed_mention_ceaf": 0.69
         }
     ]
 }
