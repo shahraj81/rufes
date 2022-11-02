@@ -92,6 +92,20 @@ docker run \
 
 # Revision History
 
+## 11/02/2022:
+* Following new metrics (copies of other existing metrics) add in support of the leaderboard:
+
+  ClusterTypesMetricV1 <- complete:ClusterTypesMetricV1
+  MentionTypesMetricV1 <- complete:MentionTypesMetricV1
+  b_cubed <- complete:b_cubed:fscore
+  entity_ceaf <- complete:entity_ceaf:fscore
+  mention_ceaf <- complete:mention_ceaf:fscore
+  muc <- complete:muc:fscore
+  pairwise <- complete:pairwise:fscore
+  strong_mention_match <- complete:strong_mention_match:fscore
+  strong_typed_mention_match <- complete:strong_typed_mention_match:fscore
+  typed_mention_ceaf <- complete:typed_mention_ceaf:fscore
+
 ## 05/27/2021:
 * Coredocs filtering added.
 * Alternative ways to build and run docker added.
