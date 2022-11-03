@@ -108,6 +108,14 @@ def generate_results_file_and_exit(logger, logs_directory):
             exit_code = ERROR_EXIT_CODE
 
     num_problems, problem_stats = get_problems(logs_directory)
+    if num_problems:
+        exit_code = ERROR_EXIT_CODE
+
+    if exit_code == ERROR_EXIT_CODE:
+        exit_message = 'Error(s) encountered.'
+        record_and_display_message(logger, exit_message)
+        exit(exit_code)
+
     fatal_error = 'Yes' if exit_code == ERROR_EXIT_CODE else 'No'
     scores['RunID'] = args.run
     scores['Errors'] = num_problems
@@ -131,11 +139,8 @@ def generate_results_file_and_exit(logger, logs_directory):
 
     exit_message = 'Done.'
 
-
-    exit_code = ALLOK_EXIT_CODE
     if num_problems:
         exit_code = ERROR_EXIT_CODE
-    
     if exit_code == ERROR_EXIT_CODE:
         exit_message = 'Fatal error encountered.'
     record_and_display_message(logger, exit_message)
