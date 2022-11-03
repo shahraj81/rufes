@@ -781,9 +781,13 @@ class Validator(Object):
     def validate_confidence(self, caller, schema, entry, attribute, data):
         # validate if the confidence is 0 (noninclusive) and 1 (inclusive)
         confidence = entry.get(attribute.get('name'))
-        if not 0 < float(confidence) <= 1.0:
-            self.record_event('INVALID_CONFIDENCE', confidence, entry.get('where'))
-            entry.set(attribute.get('name'), '1.0')
+        try:
+            if not 0 < float(confidence) <= 1.0:
+                self.record_event('INVALID_CONFIDENCE', confidence, entry.get('where'))
+                entry.set(attribute.get('name'), '1.0')
+        except ValueError:
+            self.record_event('INVALID_CONFIDENCE_ERROR', confidence, entry.get('where'))
+            return False
         return True
 
     def validate_entity_types(self, caller, schema, entry, attribute, data):
