@@ -8,6 +8,7 @@ INFO      DEFAULT_INFO                    {}
 INFO      ENTITY_TYPES_INFO               METRIC: {} {} DOCID: {} ENTITY:{} TYPES: {} EXPANDED: {}
 ERROR     IMPROPER_OFFSET_ORDER           Improper offset order - start offset > end offset in {}
 WARNING   INVALID_CONFIDENCE              Invalid confidence value '{}' (using 1.0)
+ERROR     INVALID_CONFIDENCE_ERROR        Invalid confidence value '{}'
 ERROR     NEGATIVE_OFFSET                 Negative value of {} in {}
 INFO      SIMILARITY_INFO                 METRIC: {} DOCID: {} GOLD: {} SYSTEM: {} SIMILARITY: {} COMMON_MENTIONS: {}
 ERROR     SPAN_OFF_BOUNDARY               Span '{}' is outside document boundary '{}'
