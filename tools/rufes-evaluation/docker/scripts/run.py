@@ -99,6 +99,7 @@ def generate_results_file_and_exit(logger, logs_directory):
                                 entry = dict(zip(header, line.split()))
                                 metric_names = [k for k in entry.keys() if k != 'measure']
                                 for name in metric_names:
+                                    if name not in ['precis', 'recall', 'fscore']: continue
                                     metric_name = '{prefix}:{measure}:{name}'.format(prefix=dir_name, measure=entry['measure'], name=name)
                                     scores[metric_name] = float(entry[name])
                                     found = True
