@@ -60,8 +60,16 @@ def get_leaderboard_metric_mapping(scores):
                 mapping[new_metric_name] = metric_name
     return mapping
 
-def generate_results_file_and_exit(logger, logs_directory):
-    exit_code = ALLOK_EXIT_CODE
+def generate_results_file_and_exit(logger, logs_directory, exit_code=ALLOK_EXIT_CODE):
+    num_problems, problem_stats = get_problems(logs_directory)
+    if num_problems:
+        exit_code = ERROR_EXIT_CODE
+
+    if exit_code == ERROR_EXIT_CODE:
+        exit_message = 'Error(s) encountered.'
+        record_and_display_message(logger, exit_message)
+        exit(exit_code)
+
     scores = {}
     for dir_name in choices:
         typing = []
@@ -106,10 +114,6 @@ def generate_results_file_and_exit(logger, logs_directory):
 
         if not found:
             exit_code = ERROR_EXIT_CODE
-
-    num_problems, problem_stats = get_problems(logs_directory)
-    if num_problems:
-        exit_code = ERROR_EXIT_CODE
 
     if exit_code == ERROR_EXIT_CODE:
         exit_message = 'Error(s) encountered.'
@@ -202,12 +206,12 @@ def main(args):
     if num_directories > 0 or num_others > 0 or num_files > 1:
         logger.record_event('UNEXPECTED_ITEM_FOUND')
         record_and_display_message(logger, 'Unexpected item found in input directory.')
-        generate_results_file_and_exit(logger, logs_directory)
+        generate_results_file_and_exit(logger, logs_directory, exit_code=ERROR_EXIT_CODE)
 
     if num_files == 0:
         logger.record_event('NOTHING_TO_SCORE')
         record_and_display_message(logger, 'Nothing to score.')
-        generate_results_file_and_exit(logger, logs_directory)
+        generate_results_file_and_exit(logger, logs_directory, exit_code=ERROR_EXIT_CODE)
 
     #############################################################################################
     # Copy system response file into appropriate location, apply coredocs filter and validate
