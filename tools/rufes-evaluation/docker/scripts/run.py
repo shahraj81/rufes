@@ -68,6 +68,7 @@ def generate_results_file_and_exit(logger, logs_directory, exit_code=ALLOK_EXIT_
 
     num_problems, problem_stats = get_problems(logs_directory)
     if num_problems:
+        exit_code = ERROR_EXIT_CODE
         exit_message = 'Submission format validation error(s) encountered: {} errors'.format(num_problems)
         record_and_display_message(logger, exit_message)
         exit(exit_code)
