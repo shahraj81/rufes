@@ -66,13 +66,6 @@ def generate_results_file_and_exit(logger, logs_directory, exit_code=ALLOK_EXIT_
         record_and_display_message(logger, exit_message)
         exit(exit_code)
 
-    num_problems, problem_stats = get_problems(logs_directory)
-    if num_problems:
-        exit_code = ERROR_EXIT_CODE
-        exit_message = 'Submission format validation error(s) encountered: {} errors'.format(num_problems)
-        record_and_display_message(logger, exit_message)
-        exit(exit_code)
-
     scores = {}
     for dir_name in choices:
         typing = []
@@ -223,10 +216,7 @@ def main(args):
     record_and_display_message(logger, 'Copying system response file into appropriate location.')
     destination = '{output}/run-out'.format(output=args.output)
     call_system('mkdir {destination}'.format(destination=destination))
-    call_system('cp -r {input}/{filename}.tab {destination}/{filename}-raw.tab'.format(input=args.input, filename=filename, destination=destination))
-
-    # apply coredocs filter
-    call_system('grep -f {data}/{coredocs} {destination}/{filename}-raw.tab > {destination}/{filename}-unvalidated.tab'.format(data=args.data, coredocs=args.coredocs, destination=destination, filename=filename))
+    call_system('cp -r {input}/{filename}.tab {destination}/{filename}-submitted.tab'.format(input=args.input, filename=filename, destination=destination))
 
     # validate responses
     validate_command = 'python rufesutils.py validate-responses \
@@ -234,9 +224,16 @@ def main(args):
                          ./log_specifications.txt \
                          {data}/segment_boundaries.tab \
                          {data}/ontology_types.txt \
-                         {destination}/{filename}-unvalidated.tab \
+                         {destination}/{filename}-submitted.tab \
                          {destination}/{filename}.tab'
     call_system(validate_command.format(logs_directory=logs_directory, data=args.data, destination=destination, filename=filename))
+
+    num_problems, problem_stats = get_problems(logs_directory)
+    if num_problems:
+        exit_code = ERROR_EXIT_CODE
+        exit_message = 'Submission format validation error(s) encountered: {} errors'.format(num_problems)
+        record_and_display_message(logger, exit_message)
+        exit(exit_code)
 
     #############################################################################################
     # Copy gold annotations file into appropriate location and apply coredocs filter
@@ -246,11 +243,8 @@ def main(args):
     gold_filename =  re.match(r"^(.*?)\.tab$", args.gold).group(1)
     record_and_display_message(logger, 'Copying gold annotations file into appropriate location.')
     destination = '{gold_destination}'.format(gold_destination=gold_destination)
-    call_system('mkdir {destination}'.format(destination=destination))
-    call_system('cp -r {data}/{gold_filename}.tab {destination}/{gold_filename}-raw.tab'.format(data=args.data, gold_filename=gold_filename, destination=destination))
-
-    # apply coredocs filter
-    call_system('grep -f {data}/{coredocs} {destination}/{gold_filename}-raw.tab > {destination}/{gold_filename}.tab'.format(data=args.data, coredocs=args.coredocs, gold_filename=gold_filename, destination=destination))
+    call_system('mkdir -p {destination}'.format(destination=destination))
+    call_system('cp -r {data}/{gold_filename}.tab {destination}/{gold_filename}.tab'.format(data=args.data, gold_filename=gold_filename, destination=destination))
 
     #############################################################################################
     # Generate filtered data
