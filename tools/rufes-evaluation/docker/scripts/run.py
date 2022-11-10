@@ -116,12 +116,7 @@ def generate_results_file_and_exit(logger, logs_directory, exit_code=ALLOK_EXIT_
         record_and_display_message(logger, exit_message)
         exit(exit_code)
 
-    fatal_error = 'Yes' if exit_code == ERROR_EXIT_CODE else 'No'
     scores['RunID'] = args.run
-    scores['Errors'] = num_problems
-    scores['ErrorStats'] = problem_stats
-    scores['FatalError'] = fatal_error
-
     # add leaderboard specific metrics copies
     leaderboard_metric_mapping = get_leaderboard_metric_mapping(scores)
     for new_metric_name in leaderboard_metric_mapping:
@@ -138,11 +133,6 @@ def generate_results_file_and_exit(logger, logs_directory, exit_code=ALLOK_EXIT_
         json.dump(output, fp, indent=4, sort_keys=True)
 
     exit_message = 'Done.'
-
-    if num_problems:
-        exit_code = ERROR_EXIT_CODE
-    if exit_code == ERROR_EXIT_CODE:
-        exit_message = 'Fatal error encountered.'
     record_and_display_message(logger, exit_message)
 
     exit(exit_code)
